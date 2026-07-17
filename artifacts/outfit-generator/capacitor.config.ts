@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.mydigitalhandbags.app',
-  appName: 'My Handbags',
+  appId: 'com.mydigitalshoes.app',
+  appName: 'My Shoes',
   webDir: 'dist/public',
 
   // -------------------------------------------------------------------------

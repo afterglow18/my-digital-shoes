@@ -234,7 +234,7 @@ export default function GeneratePage() {
       {/* Background image — centred via CSS transform; iOS clips transform overflow correctly */}
       <img
         src="/closet-bg.png"
-        alt="My Digital Handbags"
+        alt="My Digital Shoes"
         style={{
           position: "absolute",
           top:       ready ? ir.top   : 0,
@@ -273,7 +273,7 @@ export default function GeneratePage() {
             textShadow: "0 1px 4px rgba(255,255,255,0.3)",
             lineHeight: 1,
           }}>
-            My Digital Handbags
+            My Digital Shoes
           </span>
         </div>
       )}
@@ -382,7 +382,7 @@ export default function GeneratePage() {
                   fontFamily: "var(--font-display)", margin: 0,
                 }}>Your shelves are empty</p>
                 <p style={{ fontSize: 11, color: "#9a5060", marginTop: 5, lineHeight: 1.5 }}>
-                  Add totes, shoulder bags, crossbody bags or clutches in the Handbags tab first.
+                  Add sneakers, heels, boots or flats in the Shoes tab first.
                 </p>
               </div>
             )}

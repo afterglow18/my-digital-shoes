@@ -15,7 +15,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const wardrobeCount = stats?.total ?? undefined;
 
   const navItems = [
-    { href: "/",         label: "Handbags",  icon: null,        badge: wardrobeCount },
+    { href: "/",         label: "Shoes",     icon: null,        badge: wardrobeCount },
     { href: "/generate", label: "Generate", icon: Sparkles },
     { href: "/saved",    label: "Saved",    icon: Bookmark },
     { href: "/backup",   label: "Account",  icon: UserCircle },
