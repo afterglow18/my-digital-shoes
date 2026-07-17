@@ -22,7 +22,7 @@ workflows:
           npm install -g pnpm@11.13.1 --force
 
       - name: Install dependencies
-        script: pnpm install --no-frozen-lockfile
+        script: pnpm install --no-frozen-lockfile --force
 
       - name: Build web app
         script: pnpm --filter @workspace/outfit-generator run build
