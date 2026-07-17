@@ -325,7 +325,7 @@ export default function AccountPage() {
         <Card>
           <div className="px-4 pt-4 pb-5 flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-2xl leading-none" style={{ filter: "brightness(0) invert(1)" }}>👠</span>
+              <span className="text-2xl leading-none" style={{ filter: "brightness(0)" }}>👠</span>
               <h2 className="font-black text-base uppercase tracking-wide">My Digital Shoes</h2>
             </div>
             <p className="text-sm text-black/50 font-medium">Version {APP_VERSION}</p>
