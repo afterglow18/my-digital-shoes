@@ -1,49 +1,48 @@
 workflows:
   ios-release:
-    name: iOS Release – My Digital Shoes
-    instance_type: mac_mini_m2
+    name: My Digital Shoes — iOS Release
     max_build_duration: 60
-
-    integrations:
-      app_store_connect: codemagic  # set up in Codemagic dashboard → Integrations
+    instance_type: mac_mini_m1
 
     environment:
-      xcode: latest
-      node: "22"
-      vars:
-        BUNDLE_ID: com.mydigitalshoes.app
-        XCODE_PROJECT: artifacts/outfit-generator/ios/App/App.xcodeproj
-        XCODE_SCHEME: App
-        COREPACK_ENABLE_STRICT: "0"
-        COREPACK_DEFAULT_TO_LATEST: "0"
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.mydigitalshoes.app
+      vars:
+        XCODE_PROJECT: "artifacts/outfit-generator/ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+      node: 20.11.0
 
     scripts:
+      - name: Install pnpm
+        script: npm install -g pnpm
+
       - name: Install dependencies
-        script: |
-          pnpm install --no-frozen-lockfile
+        script: pnpm install --frozen-lockfile
 
-      - name: Build web + sync Capacitor
-        script: |
-          pnpm --filter @workspace/outfit-generator run build:ios
+      - name: Build web app
+        script: pnpm --filter @workspace/outfit-generator run build
 
-      - name: Set up code signing
-        script: |
-          xcode-project use-profiles
+      - name: Install Capacitor CLI
+        script: pnpm --filter @workspace/outfit-generator exec cap --version || npm install -g @capacitor/cli
 
-      - name: Increment build number
+      - name: Sync Capacitor iOS
         script: |
-          LATEST=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || echo "0")
+          cd artifacts/outfit-generator
+          npx cap sync ios
+
+      - name: Set build number
+        script: |
+          BUILD_NUMBER=$(($(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID") + 1))
           cd artifacts/outfit-generator/ios/App
-          agvtool new-version -all $((LATEST + 1))
+          agvtool new-version -all $BUILD_NUMBER
 
-      - name: Build IPA
+      - name: Build and sign iOS
         script: |
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --archive-flags="-destination 'generic/platform=iOS'"
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -54,4 +53,5 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-        submit_to_app_store: false  # flip to true when ready for full review
+        beta_groups:
+          - Internal Testers
