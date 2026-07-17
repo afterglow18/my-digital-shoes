@@ -24,9 +24,6 @@ workflows:
       - name: Install dependencies
         script: pnpm install --no-frozen-lockfile
 
-      - name: Install macOS native binaries
-        script: npm install @rollup/rollup-darwin-arm64 --no-save --legacy-peer-deps
-
       - name: Build web app
         script: pnpm --filter @workspace/outfit-generator run build
 
