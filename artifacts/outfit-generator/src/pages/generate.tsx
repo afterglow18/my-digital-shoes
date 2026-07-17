@@ -293,7 +293,7 @@ export default function GeneratePage() {
                   {items.length > 0 ? (
                     <div style={{
                       position: "absolute",
-                      top: secTop + labelH, left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
                       width: carW, height: consistentPhotoH,
                       zIndex: 10, overflow: "visible",
                     }}>
@@ -308,7 +308,7 @@ export default function GeneratePage() {
                   ) : (
                     <div style={{
                       position: "absolute",
-                      top: secTop + labelH, left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
                       width: carW, height: secH - labelH,
                       zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
