@@ -205,7 +205,7 @@ export default function WardrobePage() {
         height: `calc(100dvh - ${NAV_H}px)`,
         overflow: "hidden",
         transform: "translateZ(0)", // force iOS WKWebView to honour overflow:hidden
-        background: "#180508",
+        background: "#0a0a0a",
       }}
     >
       {/* Background image — centred via CSS transform; iOS clips transform overflow correctly */}
@@ -225,11 +225,7 @@ export default function WardrobePage() {
           zIndex: 0,
         }}
       />
-      {/* Plum tint overlay — shifts tones toward handbag collection palette */}
-      <div style={{
-        position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
-        background: "rgba(60, 5, 15, 0.22)",
-      }} />
+
 
       {ready && (
         <>

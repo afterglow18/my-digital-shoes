@@ -228,7 +228,7 @@ export default function GeneratePage() {
         height: `calc(100dvh - ${NAV_H}px)`,
         overflow: "hidden",
         transform: "translateZ(0)", // force iOS WKWebView to honour overflow:hidden
-        background: "#180508",
+        background: "#0a0a0a",
       }}
     >
       {/* Background image — centred via CSS transform; iOS clips transform overflow correctly */}
@@ -248,11 +248,7 @@ export default function GeneratePage() {
           zIndex: 0,
         }}
       />
-      {/* Subtle dark overlay */}
-      <div style={{
-        position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
-        background: "rgba(0, 0, 0, 0.08)",
-      }} />
+
 
       {ready && (
         <div
