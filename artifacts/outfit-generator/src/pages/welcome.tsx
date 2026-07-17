@@ -13,12 +13,13 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type Phase = "idle" | "sweeping" | "caught" | "title" | "hero" | "exiting";
 
-const SWEEP_MS = 1700;
-const CATCH_MS = 320;
-const TITLE_MS = 700;
-const HOLD_MS  = 1000;
-const HERO_MS  = 750;
-const EXIT_MS  = 600;
+const SWEEP_MS     = 950;
+const CATCH_MS     = 180;
+const TITLE_MS     = 380;
+const HOLD_MS      = 500;
+const HERO_MS      = 750;
+const HERO_HOLD_MS = 900;
+const EXIT_MS      = 600;
 
 interface Props { onEnter: () => void; }
 
@@ -39,7 +40,7 @@ export default function WelcomePage({ onEnter }: Props) {
     const t1 = t0 + CATCH_MS;
     const t2 = t1 + TITLE_MS;
     const t3 = t2 + HOLD_MS;
-    const t4 = t3 + HERO_MS;
+    const t4 = t3 + HERO_MS + HERO_HOLD_MS;
     const t5 = t4 + EXIT_MS;
 
     setPhase("sweeping");
