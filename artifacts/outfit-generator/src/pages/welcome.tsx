@@ -16,7 +16,7 @@ const LACE_MS = 650;
 const BOW_MS  = 700;
 const ZOOM_MS = 900;
 const HERO_MS = 700;
-const HOLD_MS = 380;
+const HOLD_MS = 1200;
 const EXIT_MS = 620;
 
 interface Props { onEnter: () => void; }
@@ -144,7 +144,7 @@ export default function WelcomePage({ onEnter }: Props) {
             textShadow: "0 0 24px rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.9)",
             lineHeight: 1.15,
           }}>
-            My Digital Shoes
+            Welcome to My Digital Shoes
           </div>
         </div>
 
@@ -272,7 +272,7 @@ export default function WelcomePage({ onEnter }: Props) {
               pointerEvents: "none",
             }}
           >
-            TAP TO LACE UP
+            TAP TO ENTER
           </motion.div>
         )}
       </AnimatePresence>
