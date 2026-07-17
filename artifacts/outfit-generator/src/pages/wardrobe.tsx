@@ -288,7 +288,10 @@ export default function WardrobePage() {
             const items = rowData[key];
             const secTop = pY(ir, lm.sectionTop);
             const secH   = pH(ir, lm.shelfY - lm.sectionTop);
-            const labelNudge = (rowIdx === 1 || rowIdx === 2) ? pH(ir, 0.018) : 0;
+            const labelNudge = rowIdx === 0 ? pH(ir, 0.015)
+                             : rowIdx === 2 ? pH(ir, 0.030)
+                             : rowIdx === 1 ? pH(ir, 0.018)
+                             : 0;
 
             return (
               <React.Fragment key={key}>
