@@ -16,7 +16,13 @@ import { getImageUrl } from "@/lib/utils";
 
 const SEASON_OPTIONS   = ["", "Spring", "Summer", "Fall", "Winter", "All Season"];
 const OCCASION_OPTIONS = ["", "Casual", "Work", "Formal", "Sport", "Special Event"];
-const CATEGORY_OPTIONS = ["totes", "shoulder-bags", "crossbody-bags", "clutches-wristlets"];
+const CATEGORY_OPTIONS = ["heels", "sneakers", "boots", "sandals-flats"];
+const CATEGORY_LABELS: Record<string, string> = {
+  "heels":         "Heels",
+  "sneakers":      "Sneakers",
+  "boots":         "Boots",
+  "sandals-flats": "Sandals + Flats",
+};
 
 function Field({
   label, value, onChange, placeholder, type = "text",
@@ -56,7 +62,7 @@ function SelectField({
                      text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
         >
           {options.map((o) => (
-            <option key={o} value={o}>{o || `— ${label} —`}</option>
+            <option key={o} value={o}>{CATEGORY_LABELS[o] ?? o || `— ${label} —`}</option>
           ))}
         </select>
         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-black/40" />

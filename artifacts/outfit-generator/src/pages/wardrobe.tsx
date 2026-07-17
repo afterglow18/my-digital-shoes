@@ -26,14 +26,14 @@ import { useEntitlements } from "@/hooks/useEntitlements";
 import { FREE_ITEM_LIMIT } from "@/types/local";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type RowKey   = "totes" | "shoulder-bags" | "crossbody-bags" | "clutches-wristlets";
-type Category = "totes" | "shoulder-bags" | "crossbody-bags" | "clutches-wristlets";
+type RowKey   = "heels" | "sneakers" | "boots" | "sandals-flats";
+type Category = "heels" | "sneakers" | "boots" | "sandals-flats";
 
 const ROWS: { key: RowKey; btnLabel: string }[] = [
-  { key: "totes",              btnLabel: "+ ADD TOTES"              },
-  { key: "shoulder-bags",      btnLabel: "+ ADD SHOULDER BAGS"      },
-  { key: "crossbody-bags",     btnLabel: "+ ADD CROSSBODY BAGS"     },
-  { key: "clutches-wristlets", btnLabel: "+ ADD CLUTCHES & WRISTLETS" },
+  { key: "heels",         btnLabel: "HEELS"          },
+  { key: "sneakers",      btnLabel: "SNEAKERS"        },
+  { key: "boots",         btnLabel: "BOOTS"           },
+  { key: "sandals-flats", btnLabel: "SANDALS + FLATS" },
 ];
 
 // ── Image constants ───────────────────────────────────────────────────────────
@@ -97,10 +97,10 @@ export default function WardrobePage() {
   const ir = useImageRect(containerRef);
 
   const rowRefs: Record<RowKey, RefObject<ClosetRowHandle | null>> = {
-    "totes":              useRef<ClosetRowHandle | null>(null),
-    "shoulder-bags":      useRef<ClosetRowHandle | null>(null),
-    "crossbody-bags":     useRef<ClosetRowHandle | null>(null),
-    "clutches-wristlets": useRef<ClosetRowHandle | null>(null),
+    "heels":              useRef<ClosetRowHandle | null>(null),
+    "sneakers":      useRef<ClosetRowHandle | null>(null),
+    "boots":     useRef<ClosetRowHandle | null>(null),
+    "sandals-flats": useRef<ClosetRowHandle | null>(null),
   };
 
   const [centred,       setCentred]       = useState<Partial<Record<RowKey, ClothingItem>>>({});
@@ -113,17 +113,17 @@ export default function WardrobePage() {
 
   const saveOutfit = useSaveOutfit();
 
-  const { data: totes            = [] } = useListClothing({ category: "totes"              }, { query: { queryKey: getListClothingQueryKey({ category: "totes"              }) } });
-  const { data: shoulderBags     = [] } = useListClothing({ category: "shoulder-bags"      }, { query: { queryKey: getListClothingQueryKey({ category: "shoulder-bags"      }) } });
-  const { data: crossbodyBags    = [] } = useListClothing({ category: "crossbody-bags"     }, { query: { queryKey: getListClothingQueryKey({ category: "crossbody-bags"     }) } });
-  const { data: clutchesWristlets = [] } = useListClothing({ category: "clutches-wristlets" }, { query: { queryKey: getListClothingQueryKey({ category: "clutches-wristlets" }) } });
+  const { data: totes            = [] } = useListClothing({ category: "heels"              }, { query: { queryKey: getListClothingQueryKey({ category: "heels"              }) } });
+  const { data: shoulderBags     = [] } = useListClothing({ category: "sneakers"      }, { query: { queryKey: getListClothingQueryKey({ category: "sneakers"      }) } });
+  const { data: crossbodyBags    = [] } = useListClothing({ category: "boots"     }, { query: { queryKey: getListClothingQueryKey({ category: "boots"     }) } });
+  const { data: clutchesWristlets = [] } = useListClothing({ category: "sandals-flats" }, { query: { queryKey: getListClothingQueryKey({ category: "sandals-flats" }) } });
   const { data: outfits = [] } = useListOutfits();
 
   const rowData: Record<RowKey, ClothingItem[]> = {
-    "totes":              totes,
-    "shoulder-bags":      shoulderBags,
-    "crossbody-bags":     crossbodyBags,
-    "clutches-wristlets": clutchesWristlets,
+    "heels":              totes,
+    "sneakers":      shoulderBags,
+    "boots":     crossbodyBags,
+    "sandals-flats": clutchesWristlets,
   };
   const totalItems = totes.length + shoulderBags.length + crossbodyBags.length + clutchesWristlets.length;
 
@@ -134,7 +134,7 @@ export default function WardrobePage() {
     setCentred(prev => {
       const next = { ...prev };
       let changed = false;
-      (["totes", "shoulder-bags", "crossbody-bags", "clutches-wristlets"] as RowKey[]).forEach(key => {
+      (["heels", "sneakers", "boots", "sandals-flats"] as RowKey[]).forEach(key => {
         if (rowData[key].length === 0 && next[key] !== undefined) {
           delete next[key]; changed = true;
         }
@@ -144,10 +144,10 @@ export default function WardrobePage() {
   }, [totes.length, shoulderBags.length, crossbodyBags.length, clutchesWristlets.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setCentredHandlers: Record<RowKey, (item: ClothingItem | null) => void> = {
-    "totes":              useCallback((item: ClothingItem | null) => setCentred(p => ({ ...p, "totes":              item ?? undefined })), []),
-    "shoulder-bags":      useCallback((item: ClothingItem | null) => setCentred(p => ({ ...p, "shoulder-bags":      item ?? undefined })), []),
-    "crossbody-bags":     useCallback((item: ClothingItem | null) => setCentred(p => ({ ...p, "crossbody-bags":     item ?? undefined })), []),
-    "clutches-wristlets": useCallback((item: ClothingItem | null) => setCentred(p => ({ ...p, "clutches-wristlets": item ?? undefined })), []),
+    "heels":              useCallback((item: ClothingItem | null) => setCentred(p => ({ ...p, "heels":              item ?? undefined })), []),
+    "sneakers":      useCallback((item: ClothingItem | null) => setCentred(p => ({ ...p, "sneakers":      item ?? undefined })), []),
+    "boots":     useCallback((item: ClothingItem | null) => setCentred(p => ({ ...p, "boots":     item ?? undefined })), []),
+    "sandals-flats": useCallback((item: ClothingItem | null) => setCentred(p => ({ ...p, "sandals-flats": item ?? undefined })), []),
   };
 
   const handleAddClick = useCallback((cat: Category) => {
@@ -155,10 +155,10 @@ export default function WardrobePage() {
   }, [canAddItem, totalItems]);
 
   const addHandlers: Record<RowKey, () => void> = {
-    "totes":              useCallback(() => handleAddClick("totes"),              [handleAddClick]),
-    "shoulder-bags":      useCallback(() => handleAddClick("shoulder-bags"),      [handleAddClick]),
-    "crossbody-bags":     useCallback(() => handleAddClick("crossbody-bags"),     [handleAddClick]),
-    "clutches-wristlets": useCallback(() => handleAddClick("clutches-wristlets"), [handleAddClick]),
+    "heels":              useCallback(() => handleAddClick("heels"),              [handleAddClick]),
+    "sneakers":      useCallback(() => handleAddClick("sneakers"),      [handleAddClick]),
+    "boots":     useCallback(() => handleAddClick("boots"),     [handleAddClick]),
+    "sandals-flats": useCallback(() => handleAddClick("sandals-flats"), [handleAddClick]),
   };
 
   const handleItemTap = useCallback((item: ClothingItem) => setDetailsItem(item), []);
@@ -304,9 +304,9 @@ export default function WardrobePage() {
                   <span style={{
                     fontSize: Math.max(9, labelH * 0.55),
                     fontWeight: 300, letterSpacing: "0.22em",
-                    color: "#500d1a",
+                    color: "#ffffff",
                     fontFamily: "var(--font-display)", textTransform: "uppercase",
-                    textShadow: "0 1px 3px rgba(255,255,255,0.15)",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.85)",
                   }}>
                     {btnLabel}
                   </span>

@@ -6,11 +6,18 @@ import type { ClothingCategory } from "@/types/local";
 import { ImagePlus, Loader2 } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
 
-const CATEGORIES: ClothingCategory[] = ["totes", "shoulder-bags", "crossbody-bags", "clutches-wristlets"];
+const CATEGORIES: ClothingCategory[] = ["heels", "sneakers", "boots", "sandals-flats"];
+
+const CATEGORY_LABELS: Record<ClothingCategory, string> = {
+  "heels":         "Heels",
+  "sneakers":      "Sneakers",
+  "boots":         "Boots",
+  "sandals-flats": "Sandals + Flats",
+};
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  category: z.enum(["totes", "shoulder-bags", "crossbody-bags", "clutches-wristlets"]),
+  category: z.enum(["heels", "sneakers", "boots", "sandals-flats"]),
   color: z.string().optional(),
   brand: z.string().optional(),
   notes: z.string().optional(),
@@ -32,7 +39,7 @@ export function ClothingForm({ initialData, onSubmit, isSubmitting, submitLabel 
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name || "",
-      category: initialData?.category || "totes",
+      category: initialData?.category || "heels",
       color: initialData?.color || "",
       brand: initialData?.brand || "",
       notes: initialData?.notes || "",
@@ -131,7 +138,7 @@ export function ClothingForm({ initialData, onSubmit, isSubmitting, submitLabel 
                   className="sr-only peer"
                 />
                 <div className="px-2 py-3 text-center border-2 border-black bg-white peer-checked:bg-secondary font-bold text-xs uppercase tracking-tight transition-colors">
-                  {cat}
+                  {CATEGORY_LABELS[cat]}
                 </div>
               </label>
             ))}
