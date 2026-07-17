@@ -133,7 +133,7 @@ export default function WelcomePage({ onEnter }: Props) {
               style={{
                 fontSize: "clamp(44px, 11vw, 64px)",
                 lineHeight: 1,
-                filter: "brightness(0) drop-shadow(0 4px 10px rgba(0,0,0,0.40))",
+                filter: "brightness(0) invert(1) drop-shadow(0 6px 12px rgba(255,255,255,0.15))",
               }}
             >
               {shoe.emoji}
