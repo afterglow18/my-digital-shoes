@@ -5,6 +5,8 @@ workflows:
     instance_type: mac_mini_m1
 
     environment:
+      groups:
+        - ios_workflow
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.mydigitalshoes.app
