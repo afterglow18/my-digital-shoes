@@ -10,13 +10,20 @@
   },
   "private": true,
   "devDependencies": {
+    "@rollup/rollup-darwin-arm64": "4.62.2",
     "prettier": "^3.8.4",
     "typescript": "~5.9.3"
   },
   "pnpm": {
     "supportedArchitectures": {
-      "os": ["linux", "darwin"],
-      "cpu": ["x64", "arm64"]
+      "os": [
+        "linux",
+        "darwin"
+      ],
+      "cpu": [
+        "x64",
+        "arm64"
+      ]
     }
   },
   "dependencies": {

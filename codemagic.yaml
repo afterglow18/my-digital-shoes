@@ -29,7 +29,7 @@ workflows:
           set -e
           rm -rf node_modules
           rm -rf artifacts/outfit-generator/node_modules
-          pnpm install --no-frozen-lockfile --force
+          pnpm install --frozen-lockfile --force
 
       - name: Build web app
         script: |
