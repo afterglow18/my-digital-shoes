@@ -31,13 +31,13 @@ export function LockedScreen({ onAuthenticate }: Props) {
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
       style={{
         background:
-          'linear-gradient(160deg, #3d0f18 0%, #1a0508 60%, #130306 100%)',
+          'linear-gradient(160deg, #1a1a1a 0%, #0d0d0d 60%, #080808 100%)',
       }}
     >
       {/* Plaid-style decorative strip at top */}
       <div
         className="absolute top-0 left-0 right-0 h-1.5"
-        style={{ background: '#d4af37' }}
+        style={{ background: '#ffffff' }}
       />
 
       {/* Lock icon area */}
@@ -45,10 +45,9 @@ export function LockedScreen({ onAuthenticate }: Props) {
         <div
           className="w-24 h-24 rounded-3xl flex items-center justify-center border-2"
           style={{
-            background:
-              'linear-gradient(135deg, #7D1528 0%, #5C0F1E 100%)',
-            borderColor: '#d4af37',
-            boxShadow: '0 0 0 4px rgba(212,175,55,0.15), 4px 4px 0 rgba(0,0,0,0.5)',
+            background: 'linear-gradient(135deg, #555555 0%, #333333 100%)',
+            borderColor: 'rgba(255,255,255,0.25)',
+            boxShadow: '0 0 0 4px rgba(255,255,255,0.08), 4px 4px 0 rgba(0,0,0,0.5)',
           }}
         >
           <span className="text-5xl leading-none select-none">💎</span>

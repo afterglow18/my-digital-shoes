@@ -35,10 +35,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  "totes":              "Totes",
-  "shoulder-bags":      "Shoulder Bags",
-  "crossbody-bags":     "Crossbody Bags",
-  "clutches-wristlets": "Clutches + Wristlets",
+  "heels":         "Heels",
+  "sneakers":      "Sneakers",
+  "boots":         "Boots",
+  "sandals-flats": "Sandals + Flats",
 };
 
 const ORDER_KEY = "closet-favorites-order";
@@ -80,7 +80,7 @@ function SortableTile({ item, onTap }: { item: ClothingItem; onTap: (item: Cloth
                    shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
                    active:shadow-none active:translate-x-0.5 active:translate-y-0.5
                    transition-all touch-none"
-        style={{ background: "#FDECEF", display: "block", padding: 0, cursor: "grab" }}
+        style={{ background: "rgba(245,242,238,0.95)", display: "block", padding: 0, cursor: "grab" }}
       >
         {item.imageObjectPath ? (
           <img
@@ -92,10 +92,10 @@ function SortableTile({ item, onTap }: { item: ClothingItem; onTap: (item: Cloth
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="text-2xl opacity-30">
-              {item.category === "clutches-wristlets" ? "👛"
-                : item.category === "crossbody-bags" ? "👜"
-                : item.category === "shoulder-bags" ? "👝"
-                : "🛍️"}
+              {item.category === "heels" ? "👠"
+                : item.category === "sneakers" ? "👟"
+                : item.category === "boots" ? "👢"
+                : "🩴"}
             </span>
           </div>
         )}

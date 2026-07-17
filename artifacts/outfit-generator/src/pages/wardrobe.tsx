@@ -456,9 +456,9 @@ export default function WardrobePage() {
                     disabled={!saveName.trim() || saveOutfit.isPending}
                     style={{
                       flex: 1, height: 40, borderRadius: 20,
-                      border: "2px solid #d4af37",
-                      background: "linear-gradient(to bottom, #7D1528, #5C0F1E)",
-                      color: "#f0d080", fontWeight: 800, fontSize: 13,
+                      border: "2px solid rgba(255,255,255,0.25)",
+                      background: "linear-gradient(to bottom, #707070, #555555)",
+                      color: "#ffffff", fontWeight: 800, fontSize: 13,
                       cursor: saveName.trim() ? "pointer" : "default",
                       opacity: saveName.trim() ? 1 : 0.45,
                       fontFamily: "var(--font-display)",

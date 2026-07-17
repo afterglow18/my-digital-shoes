@@ -18,14 +18,14 @@ import { FREE_OUTFIT_LIMIT } from "@/types/local";
 import { WardrobePickerSheet } from "@/components/clothing/WardrobePickerSheet";
 import { ItemDetailsSheet } from "@/components/clothing/ItemDetailsSheet";
 
-const SLOT_ORDER = ["totes", "shoulder-bags", "crossbody-bags", "clutches-wristlets"] as const;
+const SLOT_ORDER = ["heels", "sneakers", "boots", "sandals-flats"] as const;
 type SlotKey = (typeof SLOT_ORDER)[number];
 
 const SLOT_LABELS: Record<SlotKey, string> = {
-  "totes":              "Totes",
-  "shoulder-bags":      "Shoulder Bags",
-  "crossbody-bags":     "Crossbody Bags",
-  "clutches-wristlets": "Clutches + Wristlets",
+  "heels":         "Heels",
+  "sneakers":      "Sneakers",
+  "boots":         "Boots",
+  "sandals-flats": "Sandals + Flats",
 };
 
 function ItemPhoto({
@@ -194,8 +194,8 @@ export default function SavedPage() {
             className="w-full py-2.5 rounded-lg border-2 font-bold uppercase text-xs tracking-wide
                        text-white active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all"
             style={{
-              background: 'linear-gradient(to bottom, #7D1528, #5C0F1E)',
-              border: '2px solid #5C0F1E',
+              background: 'linear-gradient(to bottom, #707070, #555555)',
+              border: '2px solid #555555',
               boxShadow: '3px 3px 0 rgba(0,0,0,0.85)',
             }}
           >
