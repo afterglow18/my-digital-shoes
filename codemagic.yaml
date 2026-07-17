@@ -23,23 +23,9 @@ workflows:
 
       - name: Install dependencies
         script: |
+          rm -f pnpm-lock.yaml
           pnpm config set store-dir /tmp/pnpm-store
-          pnpm install --no-frozen-lockfile
-
-      - name: Install macOS native binaries
-        script: |
-          # rollup — resolved via require('@rollup/rollup-darwin-arm64'), so root node_modules works
-          mkdir -p node_modules/@rollup/rollup-darwin-arm64
-          curl -sL https://registry.npmjs.org/@rollup/rollup-darwin-arm64/-/rollup-darwin-arm64-4.62.2.tgz \
-            | tar -xz --strip-components=1 -C node_modules/@rollup/rollup-darwin-arm64
-
-          # lightningcss — resolved via relative path inside the pnpm virtual store
-          LCSS=$(find node_modules/.pnpm -maxdepth 4 -type d -name "lightningcss" 2>/dev/null \
-                   | grep "lightningcss@1.32.0" | head -1)
-          if [ -n "$LCSS" ]; then
-            curl -sL https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.32.0.tgz \
-              | tar -Oxz package/lightningcss.darwin-arm64.node > "$LCSS/lightningcss.darwin-arm64.node"
-          fi
+          pnpm install
 
       - name: Build web app
         script: pnpm --filter @workspace/outfit-generator run build
