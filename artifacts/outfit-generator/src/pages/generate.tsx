@@ -501,7 +501,7 @@ export default function GeneratePage() {
                   <motion.div
                     key="save-input"
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-                    style={{ display: "flex", gap: 6, width: "100%", padding: "0 8px" }}
+                    style={{ display: "flex", gap: 6, width: "100%", maxWidth: 340, margin: "0 auto", padding: "0 16px", boxSizing: "border-box" }}
                   >
                     <input
                       autoFocus type="text" placeholder="Name this look…"
