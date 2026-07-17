@@ -15,11 +15,11 @@ interface Props {
   onClose: () => void;
 }
 
-// ── Brand colours — Spin It button palette ───────────────────────────────────
-const ROSE       = "#7D1528";   // icon burgundy (button top)
-const ROSE_DARK  = "#5C0F1E";   // icon burgundy dark (button bottom)
-const ROSE_LIGHT = "#fdf0f2";   // very light blush tint for selected card bg
-const ROSE_MID   = "#d4af37";   // gold border / badge colour
+// ── Brand colours — matches app icon (charcoal / white plaid stiletto) ───────
+const ROSE       = "#1c1c1c";   // charcoal (button top / accents)
+const ROSE_DARK  = "#0a0a0a";   // near-black (button bottom)
+const ROSE_LIGHT = "#f2f2f2";   // light gray for selected card bg
+const ROSE_MID   = "#888888";   // medium gray for labels / borders
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -98,19 +98,19 @@ export function UpgradeSheet({ onClose }: Props) {
         style={{
           paddingTop: "env(safe-area-inset-top)",
           minHeight: 64,
-          backgroundColor: "#5C0F1E",
+          backgroundColor: "#111111",
           backgroundImage: [
-            // horizontal stripes — matching app icon plaid pattern
-            "repeating-linear-gradient(0deg, transparent 0px, transparent 20px, rgba(40,0,12,0.38) 20px, rgba(40,0,12,0.38) 30px, rgba(255,255,255,0.45) 30px, rgba(255,255,255,0.45) 32px, rgba(40,0,12,0.38) 32px, rgba(40,0,12,0.38) 42px, transparent 42px, transparent 62px)",
+            // horizontal stripes — matching app icon plaid pattern (dark tones)
+            "repeating-linear-gradient(0deg, transparent 0px, transparent 20px, rgba(0,0,0,0.55) 20px, rgba(0,0,0,0.55) 30px, rgba(255,255,255,0.18) 30px, rgba(255,255,255,0.18) 32px, rgba(0,0,0,0.55) 32px, rgba(0,0,0,0.55) 42px, transparent 42px, transparent 62px)",
             // vertical stripes
-            "repeating-linear-gradient(90deg, transparent 0px, transparent 20px, rgba(40,0,12,0.38) 20px, rgba(40,0,12,0.38) 30px, rgba(255,255,255,0.45) 30px, rgba(255,255,255,0.45) 32px, rgba(40,0,12,0.38) 32px, rgba(40,0,12,0.38) 42px, transparent 42px, transparent 62px)",
+            "repeating-linear-gradient(90deg, transparent 0px, transparent 20px, rgba(0,0,0,0.55) 20px, rgba(0,0,0,0.55) 30px, rgba(255,255,255,0.18) 30px, rgba(255,255,255,0.18) 32px, rgba(0,0,0,0.55) 32px, rgba(0,0,0,0.55) 42px, transparent 42px, transparent 62px)",
           ].join(", "),
         }}
       >
         <div style={{
           width: 56, height: 56, borderRadius: 12,
           overflow: "hidden",
-          boxShadow: "0 3px 12px rgba(0,0,0,0.5), 0 0 0 2px rgba(212,175,55,0.5)",
+          boxShadow: "0 3px 12px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.25)",
           filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.35))",
         }}>
           <img src="/app-icon.jpg" alt="My Digital Shoes"
@@ -134,7 +134,7 @@ export function UpgradeSheet({ onClose }: Props) {
           style={{ fontSize: 34, letterSpacing: "-0.02em" }}
         >
           UNLOCK YOUR<br />
-          <span style={{ color: ROSE }}>HANDBAGS</span>
+          <span style={{ color: ROSE }}>SHOES</span>
         </h1>
         <p className="text-xs font-semibold text-black/45 mt-1.5 tracking-wide">
           A premium feature — unlock it once.
@@ -182,7 +182,7 @@ export function UpgradeSheet({ onClose }: Props) {
               style={{
                 position:  "relative",
                 background: active ? ROSE_LIGHT : "white",
-                border:     active ? `2px solid ${ROSE_MID}` : "2px solid #c8b8d8",
+                border:     active ? `2px solid ${ROSE_MID}` : "2px solid #ddd",
                 boxShadow:  active ? `3px 3px 0 ${ROSE}` : "none",
               }}
             >
@@ -231,11 +231,11 @@ export function UpgradeSheet({ onClose }: Props) {
           onClick={handlePurchase}
           disabled={status === "pending"}
           className="w-full py-4 rounded-xl font-black text-base uppercase tracking-wide
-                     text-black transition-all active:translate-y-0.5 active:shadow-none
+                     text-white transition-all active:translate-y-0.5 active:shadow-none
                      disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
             background: status === "pending" ? ROSE_DARK : `linear-gradient(to bottom, ${ROSE}, ${ROSE_DARK})`,
-            border:     `2.5px solid ${ROSE_MID}`,
+            border:     `2.5px solid rgba(255,255,255,0.2)`,
             boxShadow:  status === "pending" ? "none" : "3px 3px 0 rgba(0,0,0,0.85)",
             letterSpacing: "0.04em",
           }}

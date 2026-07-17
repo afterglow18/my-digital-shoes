@@ -22,10 +22,10 @@ import { useQueryClient } from "@tanstack/react-query";
 const IMG_W = 1086;
 const IMG_H = 1448;
 const NAV_H = 90;
-const PLUM       = "#7D1528";   // icon burgundy (light)
-const PLUM_DARK  = "#5C0F1E";   // icon burgundy (dark)
-const GOLD       = "#d4af37";
-const GOLD_LIGHT = "#f0d080";
+const PLUM       = "#1c1c1c";   // charcoal (matches app icon)
+const PLUM_DARK  = "#0a0a0a";   // near-black
+const GOLD       = "#d0d0d0";   // light gray (border / accent)
+const GOLD_LIGHT = "#ffffff";   // white text
 
 // Fraction of image height reserved at the top of every section for the heading.
 const LABEL_FRAC = 0.042;
@@ -248,10 +248,10 @@ export default function GeneratePage() {
           zIndex: 0,
         }}
       />
-      {/* Subtle plum overlay — preserves handbag collection warmth */}
+      {/* Subtle dark overlay */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
-        background: "rgba(50, 5, 15, 0.12)",
+        background: "rgba(0, 0, 0, 0.08)",
       }} />
 
       {ready && (
@@ -358,8 +358,8 @@ export default function GeneratePage() {
                   >✨</motion.span>
                   <span style={{
                     fontSize: 10, fontWeight: 800, letterSpacing: "0.13em",
-                    textTransform: "uppercase", color: "#7a3040",
-                    background: "rgba(255,235,240,0.90)", padding: "3px 11px",
+                    textTransform: "uppercase", color: "#ffffff",
+                    background: "rgba(20,20,20,0.90)", padding: "3px 11px",
                     borderRadius: 20, whiteSpace: "nowrap",
                   }}>Building your look…</span>
                 </motion.div>
@@ -372,16 +372,16 @@ export default function GeneratePage() {
                 position: "absolute", top: "46%", left: "50%",
                 transform: "translate(-50%, -50%)", zIndex: 30,
                 textAlign: "center", padding: "14px 22px",
-                borderRadius: 16, background: "rgba(255,240,245,0.92)",
-                border: "1.5px solid rgba(220,150,160,0.40)",
-                boxShadow: "0 4px 18px rgba(0,0,0,0.11)", maxWidth: pW(ir, 0.65),
+                borderRadius: 16, background: "rgba(255,255,255,0.94)",
+                border: "1.5px solid rgba(0,0,0,0.10)",
+                boxShadow: "0 4px 18px rgba(0,0,0,0.13)", maxWidth: pW(ir, 0.65),
               }}>
                 <p style={{
                   fontWeight: 800, fontSize: 12, letterSpacing: "0.07em",
-                  textTransform: "uppercase", color: "#7a3040",
+                  textTransform: "uppercase", color: "#111",
                   fontFamily: "var(--font-display)", margin: 0,
                 }}>Your shelves are empty</p>
-                <p style={{ fontSize: 11, color: "#9a5060", marginTop: 5, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 11, color: "#555", marginTop: 5, lineHeight: 1.5 }}>
                   Add sneakers, heels, boots or flats in the Shoes tab first.
                 </p>
               </div>
@@ -391,7 +391,7 @@ export default function GeneratePage() {
             <div aria-hidden="true" style={{
               position: "absolute", top: pY(ir, LM.barY), left: 0, width: "100%",
               height: pH(ir, LM.barBot - LM.barY), zIndex: 18, pointerEvents: "none",
-              background: "rgba(255,248,250,0.96)", borderTop: "1px solid rgba(220,150,160,0.25)",
+              background: "rgba(255,255,255,0.97)", borderTop: "1px solid rgba(0,0,0,0.08)",
             }} />
 
             {/* CTA buttons */}
@@ -416,9 +416,9 @@ export default function GeneratePage() {
                       width: "auto", minWidth: 160, maxWidth: 240,
                       paddingLeft: 32, paddingRight: 32,
                       height: 52, borderRadius: 28,
-                      border: "2.5px solid #d4af37",
-                      background: hasItems ? `linear-gradient(to bottom, ${PLUM}, ${PLUM_DARK})` : "rgba(140,20,50,0.25)",
-                      color: hasItems ? "#4A3A3A" : "#9a6070",
+                      border: `2.5px solid ${GOLD}`,
+                      background: hasItems ? `linear-gradient(to bottom, ${PLUM}, ${PLUM_DARK})` : "rgba(30,30,30,0.25)",
+                      color: hasItems ? "#ffffff" : "rgba(255,255,255,0.45)",
                       fontWeight: 800, fontSize: 16, letterSpacing: "-0.01em",
                       textTransform: "uppercase", whiteSpace: "nowrap",
                       boxShadow: hasItems ? "3px 3px 0 rgba(0,0,0,0.85)" : "none",
@@ -436,7 +436,7 @@ export default function GeneratePage() {
                     style={{
                       display: "flex", gap: 6, padding: "0 24px", height: 44,
                       alignItems: "center", justifyContent: "center", borderRadius: 24,
-                      background: "rgba(255,235,240,0.85)", border: "1.5px solid rgba(220,150,160,0.28)",
+                      background: "rgba(30,30,30,0.88)", border: "1.5px solid rgba(255,255,255,0.18)",
                     }}
                   >
                     {[0, 1, 2].map(i => (
@@ -463,7 +463,7 @@ export default function GeneratePage() {
                         flexGrow: 0, flexShrink: 0, width: 130,
                         height: 44, borderRadius: 24, border: `2.5px solid ${GOLD}`,
                         background: `linear-gradient(to bottom, ${PLUM}, ${PLUM_DARK})`,
-                        color: "#4A3A3A", fontFamily: "var(--font-display)",
+                        color: "#ffffff", fontFamily: "var(--font-display)",
                         fontWeight: 800, fontSize: 14, letterSpacing: "-0.01em",
                         textTransform: "uppercase", whiteSpace: "nowrap",
                         boxShadow: "2px 2px 0 rgba(0,0,0,0.85)", cursor: "pointer",
@@ -479,7 +479,7 @@ export default function GeneratePage() {
                         flexGrow: 0, flexShrink: 0, width: 130,
                         height: 44, borderRadius: 24, border: `2.5px solid ${GOLD}`,
                         background: canSave ? "#fff" : "rgba(240,240,240,0.80)",
-                        color: "#4A3A3A", fontFamily: "var(--font-display)",
+                        color: "#111", fontFamily: "var(--font-display)",
                         fontWeight: 800, fontSize: 14, letterSpacing: "-0.01em",
                         textTransform: "uppercase", whiteSpace: "nowrap",
                         boxShadow: canSave ? "2px 2px 0 rgba(0,0,0,0.85)" : "none",
@@ -506,9 +506,9 @@ export default function GeneratePage() {
                       onKeyDown={e => e.key === "Enter" && handleSave()}
                       style={{
                         flex: 1, height: 38, borderRadius: 20, padding: "0 14px",
-                        fontSize: 13, fontWeight: 600, color: "#5a2030",
-                        background: "rgba(255,252,248,0.98)",
-                        border: "1.5px solid rgba(220,150,160,0.50)",
+                        fontSize: 13, fontWeight: 600, color: "#111",
+                        background: "rgba(255,255,255,0.98)",
+                        border: "1.5px solid rgba(0,0,0,0.18)",
                         boxShadow: "0 3px 12px rgba(0,0,0,0.13)", outline: "none",
                       }}
                     />
@@ -516,8 +516,8 @@ export default function GeneratePage() {
                       onClick={() => { setIsSaveOpen(false); setSaveName(""); }}
                       style={{
                         width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                        background: "rgba(255,248,250,0.97)",
-                        border: "1.5px solid rgba(220,150,160,0.36)",
+                        background: "rgba(245,245,245,0.97)",
+                        border: "1.5px solid rgba(0,0,0,0.14)",
                         display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
                       }}
                     ><X style={{ width: 14, height: 14, color: GOLD_LIGHT }} /></button>
@@ -527,7 +527,7 @@ export default function GeneratePage() {
                         padding: "0 14px", height: 36, borderRadius: 20, flexShrink: 0,
                         background: `linear-gradient(to bottom, ${PLUM}, ${PLUM_DARK})`,
                         color: GOLD_LIGHT, fontWeight: 700, fontSize: 13, border: `1.5px solid ${GOLD}`,
-                        boxShadow: "0 3px 10px rgba(220,100,130,0.30)",
+                        boxShadow: "0 3px 10px rgba(0,0,0,0.28)",
                         opacity: (!saveName.trim() || saveOutfit.isPending) ? 0.42 : 1,
                         cursor: "pointer",
                       }}

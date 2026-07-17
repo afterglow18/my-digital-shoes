@@ -29,7 +29,7 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Purple button ──────────────────────────────────────────────────────────────
+// ── Dark button ────────────────────────────────────────────────────────────────
 
 function PurpleButton({
   onClick,
@@ -49,8 +49,8 @@ function PurpleButton({
                  text-white transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
                  disabled:opacity-50 disabled:cursor-not-allowed"
       style={{
-        background: disabled ? '#5C0F1E' : 'linear-gradient(to bottom, #7D1528, #5C0F1E)',
-        border: '2.5px solid #5C0F1E',
+        background: disabled ? '#2a2a2a' : 'linear-gradient(to bottom, #1c1c1c, #0a0a0a)',
+        border: '2.5px solid rgba(255,255,255,0.18)',
         boxShadow: disabled ? 'none' : '3px 3px 0 rgba(0,0,0,0.85)',
         letterSpacing: '0.07em',
       }}
@@ -165,7 +165,7 @@ export default function AccountPage() {
           className="font-black uppercase leading-none"
           style={{ fontSize: 32, letterSpacing: '-0.02em' }}
         >
-          MY DIGITAL HANDBAGS
+          MY DIGITAL SHOES
         </h1>
       </div>
 
@@ -185,7 +185,7 @@ export default function AccountPage() {
               <span className="text-sm font-medium text-black/60">Current plan</span>
               <span
                 className="text-sm font-bold px-3 py-1 rounded-full border-2 border-black"
-                style={{ background: tier === 'free' ? 'white' : '#F5C842' }}
+                style={{ background: tier === 'free' ? 'white' : '#1c1c1c', color: tier === 'free' ? undefined : '#fff' }}
               >
                 {tierLabel}
               </span>
@@ -297,7 +297,7 @@ export default function AccountPage() {
                            transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: lockEnabled
-                    ? 'linear-gradient(to bottom, #7D1528, #5C0F1E)'
+                    ? 'linear-gradient(to bottom, #1c1c1c, #0a0a0a)'
                     : '#e5e7eb',
                   boxShadow: '2px 2px 0 rgba(0,0,0,0.25)',
                 }}

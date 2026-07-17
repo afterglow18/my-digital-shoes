@@ -64,13 +64,13 @@
   --app-font-sans: 'Outfit', sans-serif;
   --app-font-display: 'Syne', sans-serif;
   
-  /* Handbags Palette: Deep Burgundy, Gold, Cream, Near-Black */
+  /* Shoes Palette: Charcoal, White, Light Gray, Near-Black — matches app icon */
   --background: 45 33% 98%; /* Cream */
   --foreground: 0 0% 9%; /* Almost Black */
   
   --border: 0 0% 9%;
   --input: 0 0% 9%;
-  --ring: 43 65% 52%;
+  --ring: 0 0% 40%;
   
   --card: 0 0% 100%;
   --card-foreground: 0 0% 9%;
@@ -80,20 +80,20 @@
   --popover-foreground: 0 0% 9%;
   --popover-border: 0 0% 9%;
   
-  --primary: 350 65% 32%; /* Burgundy #7D1528 */
-  --primary-foreground: 43 82% 72%; /* Warm Gold #f0d080 */
-  --primary-border: rgba(212,175,55,0.7); /* Gold border */
+  --primary: 0 0% 11%; /* Charcoal #1c1c1c */
+  --primary-foreground: 0 0% 98%; /* Near-white */
+  --primary-border: rgba(255,255,255,0.22); /* Subtle white border */
   
-  --secondary: 350 70% 22%; /* Dark Burgundy */
-  --secondary-foreground: 43 82% 72%; /* Gold text */
-  --secondary-border: rgba(212,175,55,0.4);
+  --secondary: 0 0% 20%; /* Dark gray #333 */
+  --secondary-foreground: 0 0% 98%; /* White text */
+  --secondary-border: rgba(255,255,255,0.14);
   
-  --muted: 350 15% 92%;
-  --muted-foreground: 350 20% 40%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 42%;
   
-  --accent: 43 65% 52%; /* Gold #d4af37 */
-  --accent-foreground: 350 74% 15%; /* Deep burgundy text on gold */
-  --accent-border: rgba(180,140,20,0.6);
+  --accent: 0 0% 85%; /* Light gray #d9d9d9 */
+  --accent-foreground: 0 0% 9%; /* Dark text on light gray */
+  --accent-border: rgba(0,0,0,0.15);
   
   --destructive: 0 100% 60%;
   --destructive-foreground: 0 0% 100%;
