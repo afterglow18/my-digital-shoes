@@ -146,16 +146,17 @@ export default function WelcomePage({ onEnter }: Props) {
           width: "clamp(260px, 72vw, 380px)",
           height: 10,
           borderRadius: "5px 5px 3px 3px",
-          background: "linear-gradient(to bottom, #c8a97a, #9e7a4e)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.65), 0 1px 0 rgba(255,255,255,0.08) inset",
+          background: "linear-gradient(to bottom, #ffffff, #e0e0e0)",
+          boxShadow: "0 0 18px 4px rgba(255,255,255,0.55), 0 1px 0 rgba(255,255,255,0.9) inset",
         }} />
+        {/* Glow underneath */}
         <div style={{
-          width: "clamp(240px, 68vw, 360px)",
-          height: 5,
-          borderRadius: "0 0 4px 4px",
-          background: "rgba(0,0,0,0.35)",
-          filter: "blur(3px)",
-          marginTop: 1,
+          width: "clamp(200px, 60vw, 320px)",
+          height: 14,
+          borderRadius: "0 0 50% 50%",
+          background: "radial-gradient(ellipse at center, rgba(255,255,255,0.45) 0%, transparent 70%)",
+          filter: "blur(6px)",
+          marginTop: 2,
         }} />
       </motion.div>
 
