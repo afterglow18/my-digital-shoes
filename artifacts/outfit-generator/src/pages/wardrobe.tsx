@@ -290,7 +290,7 @@ export default function WardrobePage() {
             const secH   = pH(ir, lm.shelfY - lm.sectionTop);
             const labelNudge = rowIdx === 0 ? pH(ir, 0.015)
                              : rowIdx === 2 ? pH(ir, 0.030)
-                             : rowIdx === 1 ? pH(ir, 0.018)
+                             : rowIdx === 1 ? pH(ir, 0.022)
                              : 0;
 
             return (
