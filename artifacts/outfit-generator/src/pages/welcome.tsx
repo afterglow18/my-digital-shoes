@@ -1,48 +1,32 @@
 /**
- * WelcomePage — catwalk strut animation.
+ * WelcomePage — stiletto heel-drop animation (emoji).
  *
- * IDLE    : side-on stiletto at left edge; pulsing "TAP TO ENTER".
- * WALKING : shoe strides across screen left → right with step bounce;
- *           glittery footprint marks appear in its wake.
- * TYPING  : "My Digital Shoes" types itself out letter by letter.
- * HERO    : hero image crossfades over the scene.
- * EXITING : screen fades out → onEnter().
+ * IDLE     : 👠 hangs above centre; "My Digital Shoes" + pulsing "TAP TO ENTER".
+ * DROPPING : emoji falls under gravity to centre of screen.
+ * IMPACT   : ripple shockwave rings expand; subtle screen shake.
+ * TITLE    : title rises in below the shoe.
+ * HERO     : hero image crossfades over the scene.
+ * EXITING  : screen fades out → onEnter().
  */
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Phase = "idle" | "walking" | "typing" | "hero" | "exiting";
+type Phase = "idle" | "dropping" | "impact" | "title" | "hero" | "exiting";
 
-const WALK_MS  = 2400;
-const TYPE_MS  = 1600;   // total time for all chars to type
-const HOLD_MS  = 900;
-const HERO_MS  = 750;
-const EXIT_MS  = 600;
+const DROP_MS   = 650;
+const IMPACT_MS = 850;
+const TITLE_MS  = 450;
+const HOLD_MS   = 1100;
+const HERO_MS   = 750;
+const EXIT_MS   = 600;
 
-const TITLE = "My Digital Shoes";
-
-// Footprint x positions as % of screen width, triggered as shoe passes
-const FOOTPRINTS: { x: number; delay: number }[] = [
-  { x: 12,  delay: WALK_MS * 0.14 },
-  { x: 24,  delay: WALK_MS * 0.26 },
-  { x: 36,  delay: WALK_MS * 0.38 },
-  { x: 48,  delay: WALK_MS * 0.50 },
-  { x: 60,  delay: WALK_MS * 0.62 },
-  { x: 72,  delay: WALK_MS * 0.74 },
-  { x: 84,  delay: WALK_MS * 0.86 },
-];
+const RINGS = [30, 65, 108, 158];
 
 interface Props { onEnter: () => void; }
 
-
 export default function WelcomePage({ onEnter }: Props) {
-  const [phase, setPhase]       = useState<Phase>("idle");
-  const [visibleChars, setVisibleChars] = useState(0);
-  const [activeFootprints, setActiveFootprints] = useState<number[]>([]);
-  const calledRef  = useRef(false);
-  const timersRef  = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const clearTimers = () => { timersRef.current.forEach(clearTimeout); timersRef.current = []; };
+  const [phase, setPhase] = useState<Phase>("idle");
+  const calledRef = useRef(false);
 
   const finish = useCallback(() => {
     if (calledRef.current) return;
@@ -53,40 +37,22 @@ export default function WelcomePage({ onEnter }: Props) {
   const handleTap = useCallback(() => {
     if (phase !== "idle") return;
 
-    setPhase("walking");
+    const t0 = DROP_MS;
+    const t1 = t0 + IMPACT_MS;
+    const t2 = t1 + TITLE_MS;
+    const t3 = t2 + HOLD_MS;
+    const t4 = t3 + HERO_MS;
+    const t5 = t4 + EXIT_MS;
 
-    const add = (fn: () => void, ms: number) => {
-      const id = setTimeout(fn, ms);
-      timersRef.current.push(id);
-    };
-
-    // Footprints appear as shoe walks past
-    FOOTPRINTS.forEach((fp, i) => {
-      add(() => setActiveFootprints(prev => [...prev, i]), fp.delay);
-    });
-
-    // Shoe finishes → start typing
-    add(() => setPhase("typing"), WALK_MS);
-
-    // Type each character
-    for (let i = 1; i <= TITLE.length; i++) {
-      const delay = WALK_MS + (i / TITLE.length) * TYPE_MS;
-      add(() => setVisibleChars(i), delay);
-    }
-
-    // Show hero
-    add(() => setPhase("hero"),    WALK_MS + TYPE_MS + HOLD_MS);
-    // Exit
-    add(() => setPhase("exiting"), WALK_MS + TYPE_MS + HOLD_MS + HERO_MS);
-    add(finish,                    WALK_MS + TYPE_MS + HOLD_MS + HERO_MS + EXIT_MS);
+    setPhase("dropping");
+    setTimeout(() => setPhase("impact"),  t0);
+    setTimeout(() => setPhase("title"),   t1);
+    setTimeout(() => setPhase("hero"),    t3);
+    setTimeout(() => setPhase("exiting"), t4);
+    setTimeout(finish,                    t5);
   }, [phase, finish]);
 
-  // Cleanup on unmount
-  useEffect(() => () => clearTimers(), []);
-
-  // Y keyframes simulate steps: 5 strides across the screen
-  const stepY   = [0, -16, 0, -16, 0, -16, 0, -16, 0, -14, 0];
-  const stepRot = [0,  -4, 0,  -4, 0,  -4, 0,  -4, 0,  -3, 0];
+  const landed = phase === "impact" || phase === "title";
 
   return (
     <motion.div
@@ -103,19 +69,10 @@ export default function WelcomePage({ onEnter }: Props) {
         userSelect: "none",
       }}
     >
-      {/* Catwalk floor line */}
-      <div style={{
-        position: "absolute",
-        top: "62%", left: "5%", right: "5%",
-        height: 1,
-        background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.08) 80%, transparent)",
-        pointerEvents: "none",
-      }} />
-
       {/* Ambient glow */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 70% 40% at 50% 62%, rgba(70,60,80,0.20) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 60% 50% at 50% 48%, rgba(80,65,95,0.20) 0%, transparent 70%)",
       }} />
 
       {/* ── Hero image ─────────────────────────────────────────────────────── */}
@@ -136,95 +93,96 @@ export default function WelcomePage({ onEnter }: Props) {
         )}
       </AnimatePresence>
 
-      {/* ── Footprints ──────────────────────────────────────────────────────── */}
-      {FOOTPRINTS.map((fp, i) => (
-        <AnimatePresence key={i}>
-          {activeFootprints.includes(i) && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: [0, 0.7, 0.4], scale: [0.5, 1, 1] }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              style={{
-                position: "absolute",
-                left: `${fp.x}%`,
-                top: "62%",
-                transform: "translate(-50%, -50%)",
-                zIndex: 6,
-                pointerEvents: "none",
-                display: "flex", flexDirection: "column", gap: 3, alignItems: "center",
-              }}
-            >
-              {/* Heel print */}
-              <div style={{
-                width: 5, height: 8, borderRadius: "50%",
-                background: "rgba(255,255,255,0.45)",
-                boxShadow: "0 0 6px rgba(255,255,255,0.6)",
-              }} />
-              {/* Toe print */}
-              <div style={{
-                width: 10, height: 6, borderRadius: "50%",
-                background: "rgba(255,255,255,0.30)",
-                boxShadow: "0 0 4px rgba(255,255,255,0.4)",
-              }} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      ))}
-
-      {/* ── Walking shoe ────────────────────────────────────────────────────── */}
+      {/* ── Falling / landed emoji ─────────────────────────────────────────── */}
       <AnimatePresence>
-        {(phase === "idle" || phase === "walking") && (
+        {phase !== "hero" && phase !== "exiting" && (
           <motion.div
             key="shoe"
-            initial={{ x: "-60vw" }}
+            initial={{ y: "-130%", rotate: -20, scale: 1 }}
             animate={
-              phase === "walking"
-                ? {
-                    x: "110vw",
-                    y: stepY,
-                    rotate: stepRot,
-                  }
-                : { x: "-12vw", y: 0, rotate: 0 }
+              phase === "dropping"
+                ? { y: "0%",    rotate: 0,  scale: 1   }
+                : landed
+                  ? { y: "0%",  rotate: 0,  scale: 1   }
+                  : { y: "-130%", rotate: -20, scale: 1 }
             }
             transition={
-              phase === "walking"
-                ? {
-                    x:      { duration: WALK_MS / 1000, ease: "linear" },
-                    y:      { duration: WALK_MS / 1000, ease: "linear", times: stepY.map((_, i) => i / (stepY.length - 1)) },
-                    rotate: { duration: WALK_MS / 1000, ease: "linear", times: stepRot.map((_, i) => i / (stepRot.length - 1)) },
-                  }
-                : { duration: 0.6, ease: "easeOut" }
+              phase === "dropping"
+                ? { duration: DROP_MS / 1000, ease: [0.4, 0, 1, 0.6] }
+                : { duration: 0 }
             }
             style={{
               position: "absolute",
-              top: "53%",
+              top: "24%",
+              fontSize: 96,
+              lineHeight: 1,
               zIndex: 10,
-              filter: "drop-shadow(0 12px 28px rgba(0,0,0,0.90)) drop-shadow(0 2px 4px rgba(255,255,255,0.05))",
+              filter: "drop-shadow(0 16px 40px rgba(0,0,0,0.9))",
             }}
           >
-            <div style={{ fontSize: 72, lineHeight: 1, filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.8))" }}>
-              👠
-            </div>
+            👠
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Typed title ─────────────────────────────────────────────────────── */}
+      {/* ── Shockwave rings ───────────────────────────────────────────────── */}
       <AnimatePresence>
-        {(phase === "typing" || phase === "hero") && (
+        {(phase === "impact" || phase === "title") && (
           <motion.div
-            key="title"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            key="rings"
             style={{
               position: "absolute",
-              top: "28%",
+              top: "37%", left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 8, pointerEvents: "none",
+            }}
+          >
+            {RINGS.map((r, i) => (
+              <motion.div
+                key={i}
+                initial={{ width: 0, height: 0, opacity: 0.8 }}
+                animate={{ width: r * 2, height: r * 2, opacity: 0 }}
+                transition={{ duration: 0.85, ease: "easeOut", delay: i * 0.09 }}
+                style={{
+                  position: "absolute",
+                  top: "50%", left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  border: "1.5px solid rgba(255,255,255,0.55)",
+                  borderRadius: "50%",
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Screen shake ──────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {phase === "impact" && (
+          <motion.div
+            key="shake"
+            animate={{ x: [0, -7, 6, -4, 3, -1, 0], y: [0, 5, -3, 2, -1, 0] }}
+            transition={{ duration: 0.32, ease: "easeOut" }}
+            style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 9 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Title (rises in after impact) ────────────────────────────────── */}
+      <AnimatePresence>
+        {(phase === "title" || phase === "hero") && (
+          <motion.div
+            key="title"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: TITLE_MS / 1000, ease: "easeOut" }}
+            style={{
+              position: "absolute",
+              top: "52%",
               left: 0, right: 0,
               textAlign: "center",
-              zIndex: 20,
-              pointerEvents: "none",
+              zIndex: 20, pointerEvents: "none",
             }}
           >
             <div style={{
@@ -233,37 +191,28 @@ export default function WelcomePage({ onEnter }: Props) {
               color: "#f0f0f0",
               textShadow: "0 0 32px rgba(255,255,255,0.14), 0 2px 10px rgba(0,0,0,0.95)",
               lineHeight: 1.2,
-              letterSpacing: "0.01em",
             }}>
-              {TITLE.slice(0, visibleChars)}
-              {/* Blinking cursor while typing */}
-              {visibleChars < TITLE.length && (
-                <motion.span
-                  animate={{ opacity: [1, 0, 1] }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                  style={{ color: "rgba(255,255,255,0.5)", marginLeft: 1 }}
-                >|</motion.span>
-              )}
+              My Digital Shoes
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Idle state: wordmark + TAP TO ENTER ─────────────────────────────── */}
+      {/* ── Idle state ────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {phase === "idle" && (
           <motion.div
             key="idle-ui"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.15 } }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
+            transition={{ duration: 0.8 }}
             style={{
               position: "absolute",
-              top: "28%",
+              top: "52%",
               left: 0, right: 0,
               display: "flex", flexDirection: "column",
-              alignItems: "center", gap: 24,
+              alignItems: "center", gap: 28,
               zIndex: 20, pointerEvents: "none",
             }}
           >
