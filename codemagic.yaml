@@ -16,6 +16,11 @@ workflows:
       node: 22.13.0
 
     scripts:
+      - name: Install pnpm
+        script: |
+          corepack disable
+          npm install -g pnpm@11.13.1 --force
+
       - name: Install dependencies
         script: pnpm install --frozen-lockfile
 
