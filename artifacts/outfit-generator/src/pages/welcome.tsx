@@ -1,59 +1,65 @@
 /**
- * WelcomePage — top-down sneaker with lace-tying animation.
+ * WelcomePage — stiletto heel-drop animation.
  *
- * IDLE    : sneaker with loose lace ends; pulsing "Tap to lace up" prompt.
- * LACING  : loose ends retract to centre → bow strokes draw themselves in.
- * ZOOMING : whole shoe scales up (camera dives in).
- * HERO    : hero image crossfades.
- * EXITING : screen fades out → onEnter().
+ * IDLE     : stiletto hangs above centre, title + pulsing "TAP TO ENTER".
+ * DROPPING : heel falls under gravity to centre.
+ * IMPACT   : ripple shockwave rings expand from heel point; subtle shake.
+ * TITLE    : "Welcome to My Digital Shoes" rises in.
+ * HERO     : hero image crossfades over the scene.
+ * EXITING  : whole screen fades out → onEnter().
  */
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Phase = "idle" | "lacing" | "zooming" | "hero" | "exiting";
+type Phase = "idle" | "dropping" | "impact" | "title" | "hero" | "exiting";
 
-const LACE_MS = 650;
-const BOW_MS  = 700;
-const ZOOM_MS = 900;
-const HERO_MS = 700;
-const HOLD_MS = 1200;
-const EXIT_MS = 620;
+const DROP_MS   = 680;
+const IMPACT_MS = 850;
+const TITLE_MS  = 480;
+const HOLD_MS   = 1200;
+const HERO_MS   = 750;
+const EXIT_MS   = 600;
 
 interface Props { onEnter: () => void; }
 
-// ── Sneaker top-down geometry (220 × 300 canvas, ankle at top, toe at bottom)
-const SHOE_PATH = `
-  M 110 46 C 150 44 188 62 196 94
-  L 200 220 C 200 258 170 288 110 290
-  C 50 288 20 258 20 220
-  L 24 94 C 32 62 70 44 110 46 Z
+// ── Stiletto SVG — side view, toe left, spike drops down-right ──────────────
+// ViewBox 0 0 240 300  (shoe body roughly top half, spike extends below)
+const UPPER_PATH = `
+  M 22 118
+  C 18 96, 26 72, 50 56
+  C 80 38, 140 30, 190 35
+  C 210 38, 224 48, 226 62
+  L 224 92
+  C 218 98, 208 104, 198 107
+  L 40 114
+  C 32 114, 20 116, 22 118 Z
 `;
 
-// Centre tongue strip
-const TONGUE_PATH = `
-  M 84 55 L 136 55 L 136 210
-  C 136 223 124 230 110 230
-  C 96 230 84 223 84 210 Z
+// Thin heel spike from heel seat down
+const SPIKE_PATH = `
+  M 198 107
+  C 202 110, 206 118, 208 132
+  L 213 268
+  L 219 267
+  L 214 132
+  C 212 118, 208 110, 204 107 Z
 `;
 
-// 5 eyelet row y-positions & paired x positions
-const EY = [84, 114, 144, 172, 198];
-const EL = [76, 72, 68, 64, 60];   // left eyelet x (spreading outward lower)
-const ER = [144, 148, 152, 156, 160]; // right eyelet x
+// Toe cap accent
+const TOE_CAP = `
+  M 22 118
+  C 16 110, 14 98, 18 88
+  C 22 78, 34 70, 50 66
+  C 36 76, 28 92, 26 106 Z
+`;
 
-// Horizontal bar laces
-const BARS = EY.map((y, i) => ({ d: `M ${EL[i]} ${y} L ${ER[i]} ${y}` }));
+// Sole strip (flat bottom of the shoe body)
+const SOLE_PATH = `
+  M 40 114 L 198 107 L 200 112 L 42 120 Z
+`;
 
-// Loose lace ends — curl from top eyelets outward/upward
-const LOOSE_LEFT_D  = `M ${EL[0]} ${EY[0]} C 58 68, 36 54, 18 42`;
-const LOOSE_RIGHT_D = `M ${ER[0]} ${EY[0]} C 162 68, 184 54, 202 42`;
-
-// Bow parts — each is a separate path drawn via stroke-dashoffset
-const BOW_LOOP_L = `M 110 80 C 98 72, 78 66, 70 72 C 60 80, 64 94, 78 96 C 92 98, 106 86, 110 80`;
-const BOW_LOOP_R = `M 110 80 C 122 72, 142 66, 150 72 C 160 80, 156 94, 142 96 C 128 98, 114 86, 110 80`;
-const BOW_KNOT   = `M 103 82 C 106 78, 114 78, 117 82 C 114 86, 106 86, 103 82`;
-const BOW_TAIL_L = `M 105 86 C 98 96, 86 108, 78 118`;
-const BOW_TAIL_R = `M 115 86 C 122 96, 134 108, 142 118`;
+// Ripple ring radii
+const RINGS = [28, 58, 95, 138];
 
 export default function WelcomePage({ onEnter }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -67,20 +73,27 @@ export default function WelcomePage({ onEnter }: Props) {
 
   const handleTap = useCallback(() => {
     if (phase !== "idle") return;
-    setPhase("lacing");
 
-    // After lace ends retract + bow draws
-    setTimeout(() => setPhase("zooming"), LACE_MS + BOW_MS + 120);
-    // After zoom
-    setTimeout(() => setPhase("hero"),    LACE_MS + BOW_MS + 120 + ZOOM_MS);
-    // After hero hold
-    setTimeout(() => setPhase("exiting"), LACE_MS + BOW_MS + 120 + ZOOM_MS + HOLD_MS);
-    // Fire onEnter
-    setTimeout(finish,                    LACE_MS + BOW_MS + 120 + ZOOM_MS + HOLD_MS + EXIT_MS);
+    const t0 = DROP_MS;
+    const t1 = t0 + IMPACT_MS;
+    const t2 = t1 + TITLE_MS;
+    const t3 = t2 + HOLD_MS;
+    const t4 = t3 + HERO_MS;
+    const t5 = t4 + EXIT_MS;
+
+    setPhase("dropping");
+    setTimeout(() => setPhase("impact"),  t0);
+    setTimeout(() => setPhase("title"),   t1);
+    setTimeout(() => setPhase("hero"),    t3);
+    setTimeout(() => setPhase("exiting"), t4);
+    setTimeout(finish,                    t5);
   }, [phase, finish]);
 
-  const isLacing  = phase === "lacing";
-  const bowVisible = isLacing || phase === "zooming" || phase === "hero" || phase === "exiting";
+  const shoeVisible = phase !== "hero" && phase !== "exiting";
+  const shoeDropped = phase === "impact" || phase === "title";
+
+  // Spike tip screen-position for ripple origin (approximate centre-screen)
+  const spikeScreenY = "58%";
 
   return (
     <motion.div
@@ -89,7 +102,7 @@ export default function WelcomePage({ onEnter }: Props) {
       onClick={handleTap}
       style={{
         position: "fixed", inset: 0, zIndex: 200,
-        background: "#0a0a0a",
+        background: "#080808",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         overflow: "hidden",
@@ -97,20 +110,20 @@ export default function WelcomePage({ onEnter }: Props) {
         userSelect: "none",
       }}
     >
-      {/* Ambient glow */}
+      {/* Ambient radial glow */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 55% 40% at 50% 48%, rgba(60,60,80,0.28) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 60% 50% at 50% 52%, rgba(80,70,90,0.22) 0%, transparent 70%)",
       }} />
 
-      {/* Hero image (fades in during hero phase, sits behind shoe) */}
+      {/* ── Hero image (fades in during hero phase) ────────────────────────── */}
       <AnimatePresence>
         {(phase === "hero" || phase === "exiting") && (
           <motion.img
             key="hero"
             src="/handbag-hero.jpg"
             alt=""
-            initial={{ opacity: 0, scale: 1.08 }}
+            initial={{ opacity: 0, scale: 1.06 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: HERO_MS / 1000, ease: "easeOut" }}
             style={{
@@ -121,163 +134,192 @@ export default function WelcomePage({ onEnter }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Shoe + branding container */}
-      <motion.div
-        animate={
-          phase === "zooming" || phase === "hero" || phase === "exiting"
-            ? { scale: 6, opacity: phase === "exiting" ? 0 : 1 }
-            : { scale: 1, opacity: 1 }
-        }
-        transition={{ duration: ZOOM_MS / 1000, ease: [0.4, 0, 0.2, 1] }}
-        style={{
-          display: "flex", flexDirection: "column",
-          alignItems: "center", gap: 20,
-          position: "relative", zIndex: 10,
-        }}
-      >
-        {/* ── App wordmark ────────────────────────────────────────────────── */}
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            fontFamily: "'Great Vibes', cursive",
-            fontSize: "clamp(34px, 10vw, 50px)",
-            color: "#f0f0f0",
-            textShadow: "0 0 24px rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.9)",
-            lineHeight: 1.15,
-          }}>
-            Welcome to My Digital Shoes
-          </div>
-        </div>
-
-        {/* ── Sneaker SVG ─────────────────────────────────────────────────── */}
-        <motion.svg
-          width={220} height={300}
-          viewBox="0 0 220 300"
-          fill="none"
-          style={{
-            filter:
-              "drop-shadow(0 12px 32px rgba(0,0,0,0.85)) " +
-              "drop-shadow(0 2px 8px rgba(255,255,255,0.04))",
-          }}
-        >
-          {/* Outer shoe body */}
-          <path d={SHOE_PATH} fill="#1c1c1c" stroke="rgba(255,255,255,0.18)" strokeWidth={2} />
-
-          {/* Tongue */}
-          <path d={TONGUE_PATH} fill="#252525" stroke="rgba(255,255,255,0.10)" strokeWidth={1.5} />
-
-          {/* Stitching line down tongue centre */}
-          <line x1={110} y1={60} x2={110} y2={220}
-            stroke="rgba(255,255,255,0.08)" strokeWidth={1}
-            strokeDasharray="4 5" strokeLinecap="round" />
-
-          {/* Bar laces */}
-          {BARS.map((b, i) => (
-            <path key={i} d={b.d}
-              stroke="rgba(255,255,255,0.75)" strokeWidth={2.5} strokeLinecap="round" />
-          ))}
-
-          {/* Eyelets */}
-          {EY.map((y, i) => (
-            <g key={i}>
-              <circle cx={EL[i]} cy={y} r={4.5} fill="#0a0a0a" stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
-              <circle cx={ER[i]} cy={y} r={4.5} fill="#0a0a0a" stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
-            </g>
-          ))}
-
-          {/* ── Loose lace ends (hidden once lacing starts) ───────────────── */}
-          <motion.path
-            d={LOOSE_LEFT_D}
-            stroke="rgba(255,255,255,0.80)" strokeWidth={2.5} strokeLinecap="round" fill="none"
-            animate={isLacing || bowVisible
-              ? { opacity: 0, pathLength: 0 }
-              : { opacity: 1, pathLength: 1 }}
-            initial={{ opacity: 1, pathLength: 1 }}
-            transition={{ duration: LACE_MS / 1000, ease: "easeIn" }}
-          />
-          <motion.path
-            d={LOOSE_RIGHT_D}
-            stroke="rgba(255,255,255,0.80)" strokeWidth={2.5} strokeLinecap="round" fill="none"
-            animate={isLacing || bowVisible
-              ? { opacity: 0, pathLength: 0 }
-              : { opacity: 1, pathLength: 1 }}
-            initial={{ opacity: 1, pathLength: 1 }}
-            transition={{ duration: LACE_MS / 1000, ease: "easeIn" }}
-          />
-
-          {/* ── Bow (draws in after lace ends retract) ────────────────────── */}
-          {bowVisible && (
-            <>
-              {/* Left bow loop */}
-              <motion.path
-                d={BOW_LOOP_L}
-                stroke="rgba(255,255,255,0.85)" strokeWidth={2.5} strokeLinecap="round" fill="none"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: BOW_MS / 1000 * 0.6, ease: "easeOut", delay: 0.05 }}
-              />
-              {/* Right bow loop */}
-              <motion.path
-                d={BOW_LOOP_R}
-                stroke="rgba(255,255,255,0.85)" strokeWidth={2.5} strokeLinecap="round" fill="none"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: BOW_MS / 1000 * 0.6, ease: "easeOut", delay: 0.12 }}
-              />
-              {/* Knot */}
-              <motion.path
-                d={BOW_KNOT}
-                stroke="rgba(255,255,255,0.70)" strokeWidth={2} fill="rgba(255,255,255,0.15)"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                style={{ transformOrigin: "110px 82px" }}
-                transition={{ duration: 0.25, ease: "backOut", delay: BOW_MS / 1000 * 0.5 }}
-              />
-              {/* Left tail */}
-              <motion.path
-                d={BOW_TAIL_L}
-                stroke="rgba(255,255,255,0.70)" strokeWidth={2.5} strokeLinecap="round" fill="none"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: BOW_MS / 1000 * 0.4, ease: "easeOut", delay: BOW_MS / 1000 * 0.55 }}
-              />
-              {/* Right tail */}
-              <motion.path
-                d={BOW_TAIL_R}
-                stroke="rgba(255,255,255,0.70)" strokeWidth={2.5} strokeLinecap="round" fill="none"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: BOW_MS / 1000 * 0.4, ease: "easeOut", delay: BOW_MS / 1000 * 0.55 }}
-              />
-            </>
-          )}
-        </motion.svg>
-      </motion.div>
-
-      {/* ── "Tap to lace up" prompt (idle only) ─────────────────────────────── */}
+      {/* ── Stiletto (falls from above) ────────────────────────────────────── */}
       <AnimatePresence>
-        {phase === "idle" && (
+        {shoeVisible && (
           <motion.div
-            key="prompt"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: [0.5, 1, 0.5], y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{
-              opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 0.4 },
-            }}
+            key="shoe"
+            initial={{ y: "-115%", rotate: -8 }}
+            animate={
+              phase === "dropping"
+                ? { y: "-115%", rotate: -8 }          // still falling (keyframe handled below)
+                : shoeDropped
+                  ? { y: "-18%", rotate: 0 }           // landed
+                  : { y: "-115%", rotate: -8 }         // idle — hangs above
+            }
+            transition={
+              phase === "dropping"
+                ? { y: { duration: DROP_MS / 1000, ease: [0.55, 0, 1, 0.45] },
+                    rotate: { duration: DROP_MS / 1000, ease: "easeIn" } }
+                : {}
+            }
             style={{
-              position: "absolute", bottom: "15%",
-              fontSize: 11, fontWeight: 600, letterSpacing: "0.22em",
-              textTransform: "uppercase", color: "rgba(255,255,255,0.40)",
-              pointerEvents: "none",
+              position: "absolute",
+              top: 0, left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 10,
+              filter: "drop-shadow(0 20px 48px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(255,255,255,0.04))",
             }}
           >
-            TAP TO ENTER
+            <svg
+              width={240} height={300}
+              viewBox="0 0 240 300"
+              fill="none"
+            >
+              {/* Spike */}
+              <path d={SPIKE_PATH} fill="#1a1a1a" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
+              {/* Upper body */}
+              <path d={UPPER_PATH} fill="#1e1e1e" stroke="rgba(255,255,255,0.20)" strokeWidth={1.5} />
+              {/* Sole strip */}
+              <path d={SOLE_PATH} fill="#111" stroke="rgba(255,255,255,0.10)" strokeWidth={1} />
+              {/* Toe cap */}
+              <path d={TOE_CAP} fill="#252525" stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+              {/* Subtle sheen line across vamp */}
+              <path
+                d="M 60 72 C 110 58, 170 52, 210 58"
+                stroke="rgba(255,255,255,0.09)" strokeWidth={1.5}
+                strokeLinecap="round" fill="none"
+              />
+            </svg>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Footer */}
+      {/* ── Falling shoe trigger (drives the actual drop motion) ───────────── */}
+      <AnimatePresence>
+        {phase === "dropping" && (
+          <motion.div
+            key="drop-driver"
+            initial={{ y: "-115%" }}
+            animate={{ y: "-18%" }}
+            transition={{ duration: DROP_MS / 1000, ease: [0.55, 0, 1, 0.45] }}
+            onAnimationComplete={() => {}}
+            style={{ position: "absolute", top: 0, left: "50%", width: 240, height: 300,
+                     pointerEvents: "none", opacity: 0, zIndex: -1 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Impact shockwave rings ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {(phase === "impact" || phase === "title") && (
+          <motion.div
+            key="rings"
+            style={{
+              position: "absolute",
+              top: spikeScreenY, left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 8, pointerEvents: "none",
+            }}
+          >
+            {RINGS.map((r, i) => (
+              <motion.div
+                key={i}
+                initial={{ width: 0, height: 0, opacity: 0.75, borderRadius: "50%" }}
+                animate={{ width: r * 2, height: r * 2, opacity: 0 }}
+                transition={{
+                  duration: 0.9,
+                  ease: "easeOut",
+                  delay: i * 0.10,
+                }}
+                style={{
+                  position: "absolute",
+                  top: "50%", left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  border: "1.5px solid rgba(255,255,255,0.55)",
+                  borderRadius: "50%",
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Screen shake on impact ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {phase === "impact" && (
+          <motion.div
+            key="shake"
+            animate={{ x: [0, -6, 5, -4, 3, -2, 1, 0], y: [0, 4, -3, 2, -1, 0] }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 9 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── App title ──────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {(phase === "title" || phase === "hero") && (
+          <motion.div
+            key="title"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: TITLE_MS / 1000, ease: "easeOut" }}
+            style={{
+              position: "absolute",
+              bottom: "22%",
+              left: 0, right: 0,
+              textAlign: "center",
+              zIndex: 20,
+              pointerEvents: "none",
+            }}
+          >
+            <div style={{
+              fontFamily: "'Great Vibes', cursive",
+              fontSize: "clamp(36px, 11vw, 54px)",
+              color: "#f0f0f0",
+              textShadow: "0 0 32px rgba(255,255,255,0.12), 0 2px 10px rgba(0,0,0,0.95)",
+              lineHeight: 1.2,
+            }}>
+              Welcome to My Digital Shoes
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Idle state: wordmark + prompt ─────────────────────────────────── */}
+      <AnimatePresence>
+        {phase === "idle" && (
+          <motion.div
+            key="idle-ui"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            style={{
+              position: "absolute", bottom: "18%",
+              left: 0, right: 0,
+              display: "flex", flexDirection: "column",
+              alignItems: "center", gap: 28,
+              zIndex: 20, pointerEvents: "none",
+            }}
+          >
+            <div style={{
+              fontFamily: "'Great Vibes', cursive",
+              fontSize: "clamp(36px, 11vw, 54px)",
+              color: "#f0f0f0",
+              textShadow: "0 0 32px rgba(255,255,255,0.12), 0 2px 10px rgba(0,0,0,0.95)",
+              lineHeight: 1.2,
+              textAlign: "center",
+            }}>
+              Welcome to My Digital Shoes
+            </div>
+
+            <motion.div
+              animate={{ opacity: [0.35, 0.9, 0.35] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+              style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: "0.22em",
+                textTransform: "uppercase", color: "rgba(255,255,255,0.55)",
+              }}
+            >
+              TAP TO ENTER
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Footer links ───────────────────────────────────────────────────── */}
       <div style={{
         position: "fixed",
         bottom: "calc(env(safe-area-inset-bottom) + 10px)",
