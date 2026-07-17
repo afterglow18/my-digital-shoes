@@ -167,7 +167,7 @@ export default function WelcomePage({ onEnter }: Props) {
             key="title"
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.18, ease: "easeIn" } }}
             transition={{ duration: TITLE_MS / 1000, ease: [0.2, 0, 0.2, 1] }}
             style={{
               position: "absolute", top: "58%",
