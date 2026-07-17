@@ -32,7 +32,7 @@ import React, {
 const SCALE_CTR   = 1.12;            // center card is 12% larger
 const SCALE_SIDE  = 0.88;            // side cards are 88% of center
 const OPACITY_SIDE = 0.72;           // side cards fade to 72%
-const BG_CENTER   = "rgba(245, 242, 238, 0.95)"; // off-white card for selected item
+const BG_CENTER   = "radial-gradient(ellipse at center, rgba(255,250,240,0.72) 0%, rgba(240,232,218,0.38) 55%, transparent 100%)"; // warm glow behind selected item
 const SHADOW_CTR  = "0 4px 20px rgba(0,0,0,0.30), 0 1px 6px rgba(0,0,0,0.20)";
 import type { ClothingItem } from "@/types/local";
 import { getImageUrl } from "@/lib/utils";
@@ -287,7 +287,7 @@ export const ClosetRow = forwardRef<ClosetRowHandle, ClosetRowProps>(
               const p = Math.max(0, Math.min(1, 1 - distSlots));
               scale   = SCALE_SIDE  + (SCALE_CTR   - SCALE_SIDE)   * p;
               opacity = OPACITY_SIDE + (1           - OPACITY_SIDE) * p;
-              bg      = p > 0.5 ? `rgba(245, 242, 238, ${((p - 0.5) * 2).toFixed(3)})` : "transparent";
+              bg      = p > 0.5 ? `radial-gradient(ellipse at center, rgba(255,250,240,${((p - 0.5) * 1.4).toFixed(3)}) 0%, rgba(240,232,218,${((p - 0.5) * 0.7).toFixed(3)}) 55%, transparent 100%)` : "transparent";
               shadow  = p > 0.05
                 ? `0 ${(4 * p).toFixed(1)}px ${(16 * p).toFixed(1)}px rgba(0,0,0,${(0.30 * p).toFixed(3)})`
                 : "none";
