@@ -1,25 +1,33 @@
 /**
- * WelcomePage — spotlight fashion show reveal.
+ * WelcomePage — shoes line themselves up on a shelf.
  *
- * IDLE     : dark stage, shoe on pedestal barely visible, "TAP TO ENTER".
- * SWEEPING : spotlight cone sweeps in from the left across the stage.
- * CAUGHT   : spotlight locks on the shoe; it blazes into full light.
- * TITLE    : "My Digital Shoes" rises up from below like a runway reveal.
- * HERO     : hero image crossfades in.
+ * IDLE     : empty shelf, "TAP TO ENTER" pulsing.
+ * SLIDING  : four shoes slide in from off-screen and snap into place.
+ * TITLE    : "My Digital Shoes" rises in below the shelf.
+ * HERO     : hero image crossfades over the scene.
  * EXITING  : screen fades out → onEnter().
  */
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Phase = "idle" | "sweeping" | "caught" | "title" | "hero" | "exiting";
+type Phase = "idle" | "sliding" | "title" | "hero" | "exiting";
 
-const SWEEP_MS     = 580;
-const CATCH_MS     = 100;
-const TITLE_MS     = 220;
-const HOLD_MS      = 0;
-const HERO_MS      = 750;
-const HERO_HOLD_MS = 0;
-const EXIT_MS      = 600;
+// Each shoe slides in staggered; last lands at SLIDE_MS + 3 * STAGGER_MS
+const SLIDE_MS   = 480;
+const STAGGER_MS = 130;
+const SETTLE_MS  = 260;   // brief pause after last shoe lands
+const TITLE_MS   = 500;
+const HERO_MS    = 700;
+const EXIT_MS    = 600;
+
+const SHOES = [
+  { emoji: "👟", label: "Sneaker", dir: -1, stagger: 0   },
+  { emoji: "👠", label: "Heel",    dir:  1, stagger: 1   },
+  { emoji: "👢", label: "Boot",    dir: -1, stagger: 2   },
+  { emoji: "🩴", label: "Sandal",  dir:  1, stagger: 3   },
+];
+
+const totalSlide = SLIDE_MS + STAGGER_MS * 3;
 
 interface Props { onEnter: () => void; }
 
@@ -36,25 +44,20 @@ export default function WelcomePage({ onEnter }: Props) {
   const handleTap = useCallback(() => {
     if (phase !== "idle") return;
 
-    const t0 = SWEEP_MS;
-    const t1 = t0 + CATCH_MS;
-    const t2 = t1 + TITLE_MS;
-    const t3 = t2 + HOLD_MS;
-    const t4 = t3 + HERO_MS + HERO_HOLD_MS;
-    const t5 = t4 + EXIT_MS;
+    const t0 = totalSlide + SETTLE_MS;          // title starts
+    const t1 = t0 + TITLE_MS;                   // hero starts
+    const t2 = t1 + HERO_MS;                    // exit starts
+    const t3 = t2 + EXIT_MS;                    // fire onEnter
 
-    setPhase("sweeping");
-    setTimeout(() => setPhase("caught"),  t0);
-    setTimeout(() => setPhase("title"),   t1);
-    setTimeout(() => setPhase("hero"),    t3);
-    setTimeout(() => setPhase("exiting"), t4);
-    setTimeout(finish,                    t5);
+    setPhase("sliding");
+    setTimeout(() => setPhase("title"),   t0);
+    setTimeout(() => setPhase("hero"),    t1);
+    setTimeout(() => setPhase("exiting"), t2);
+    setTimeout(finish,                    t3);
   }, [phase, finish]);
 
-  const isLit   = phase === "caught" || phase === "title" || phase === "hero";
-  const hasTitle = phase === "title" || phase === "hero";
-  const sweeping = phase === "sweeping";
-  const spotlightActive = sweeping || isLit;
+  const shoesOnShelf = phase !== "idle";
+  const showTitle    = phase === "title" || phase === "hero";
 
   return (
     <motion.div
@@ -63,7 +66,7 @@ export default function WelcomePage({ onEnter }: Props) {
       onClick={handleTap}
       style={{
         position: "fixed", inset: 0, zIndex: 200,
-        background: "#000",
+        background: "#080808",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         overflow: "hidden",
@@ -71,6 +74,12 @@ export default function WelcomePage({ onEnter }: Props) {
         userSelect: "none",
       }}
     >
+      {/* Subtle radial glow behind the shelf area */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse 70% 35% at 50% 48%, rgba(80,70,60,0.18) 0%, transparent 70%)",
+      }} />
+
       {/* ── Hero image ─────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {(phase === "hero" || phase === "exiting") && (
@@ -89,125 +98,88 @@ export default function WelcomePage({ onEnter }: Props) {
         )}
       </AnimatePresence>
 
-      {/* ── Spotlight cone (sweeps from left, locks centre) ───────────────── */}
-      <AnimatePresence>
-        {spotlightActive && (
-          <motion.div
-            key="cone"
-            initial={{ left: "-25%", opacity: 0.85 }}
-            animate={
-              isLit
-                ? { left: "calc(50% - 130px)", opacity: 1 }
-                : { left: "calc(50% - 130px)", opacity: 0.85 }
-            }
-            transition={{
-              left:    { duration: SWEEP_MS / 1000, ease: [0.2, 0, 0.5, 1] },
-              opacity: { duration: 0.2 },
-            }}
-            style={{
-              position: "absolute",
-              top: "-60px",
-              width: 260,
-              height: "72vh",
-              clipPath: "polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%)",
-              background: "linear-gradient(to bottom, rgba(255,248,215,0.50) 0%, rgba(255,245,200,0.22) 35%, rgba(255,240,180,0.07) 70%, transparent 100%)",
-              filter: "blur(14px)",
-              pointerEvents: "none",
-              zIndex: 6,
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* ── Halo glow on shoe when caught ────────────────────────────────── */}
-      <AnimatePresence>
-        {isLit && (
-          <motion.div
-            key="halo"
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.45, ease: "easeOut" }}
-            style={{
-              position: "absolute",
-              top: "31%", left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 180, height: 180,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(255,248,210,0.22) 0%, rgba(255,240,170,0.08) 55%, transparent 100%)",
-              pointerEvents: "none",
-              zIndex: 7,
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* ── Floor pool of light ───────────────────────────────────────────── */}
-      <AnimatePresence>
-        {isLit && (
-          <motion.div
-            key="floor"
-            initial={{ opacity: 0, scaleX: 0.3 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            style={{
-              position: "absolute",
-              top: "54%", left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 160, height: 30,
-              borderRadius: "50%",
-              background: "radial-gradient(ellipse, rgba(255,245,190,0.18) 0%, transparent 70%)",
-              pointerEvents: "none",
-              zIndex: 7,
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* ── Shoe on pedestal ─────────────────────────────────────────────── */}
+      {/* ── Shelf + shoes ─────────────────────────────────────────────────── */}
       <motion.div
-        animate={{
-          filter: isLit ? "brightness(1)" : "brightness(0.08)",
-          opacity: (phase === "hero" || phase === "exiting") ? 0 : 1,
-        }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
+        animate={{ opacity: (phase === "hero" || phase === "exiting") ? 0 : 1 }}
+        transition={{ duration: 0.4 }}
         style={{
           position: "absolute",
-          top: "30%",
-          display: "flex", flexDirection: "column", alignItems: "center",
+          top: "34%",
+          left: 0, right: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
           zIndex: 10,
         }}
       >
-        {/* Shoe emoji */}
-        <div style={{ fontSize: 96, lineHeight: 1, filter: "drop-shadow(0 6px 18px rgba(255,240,180,0.35))" }}>
-          👠
+        {/* Shoe row */}
+        <div style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "flex-end",
+          justifyContent: "center",
+          gap: "clamp(18px, 6vw, 36px)",
+          paddingBottom: 10,
+          width: "100%",
+          overflow: "hidden",
+        }}>
+          {SHOES.map((shoe) => (
+            <motion.div
+              key={shoe.label}
+              initial={{ x: shoe.dir * 500, opacity: 0 }}
+              animate={
+                shoesOnShelf
+                  ? { x: 0, opacity: 1 }
+                  : { x: shoe.dir * 500, opacity: 0 }
+              }
+              transition={{
+                type: "spring",
+                stiffness: 320,
+                damping: 24,
+                delay: shoe.stagger * (STAGGER_MS / 1000),
+              }}
+              style={{
+                fontSize: "clamp(44px, 11vw, 64px)",
+                lineHeight: 1,
+                filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.7))",
+              }}
+            >
+              {shoe.emoji}
+            </motion.div>
+          ))}
         </div>
-        {/* Pedestal */}
+
+        {/* Shelf plank */}
         <div style={{
-          marginTop: 6,
-          width: 72, height: 10,
-          borderRadius: "4px 4px 2px 2px",
-          background: "linear-gradient(to bottom, rgba(255,255,255,0.18), rgba(255,255,255,0.06))",
-          boxShadow: isLit ? "0 2px 12px rgba(255,240,180,0.18)" : "none",
+          width: "clamp(260px, 72vw, 380px)",
+          height: 10,
+          borderRadius: "5px 5px 3px 3px",
+          background: "linear-gradient(to bottom, #c8a97a, #9e7a4e)",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.65), 0 1px 0 rgba(255,255,255,0.08) inset",
         }} />
+        {/* Shelf underside shadow */}
         <div style={{
-          width: 50, height: 5,
-          background: "rgba(255,255,255,0.06)",
+          width: "clamp(240px, 68vw, 360px)",
+          height: 5,
           borderRadius: "0 0 4px 4px",
+          background: "rgba(0,0,0,0.35)",
+          filter: "blur(3px)",
+          marginTop: 1,
         }} />
       </motion.div>
 
-      {/* ── Title rises like a runway reveal ─────────────────────────────── */}
+      {/* ── Title ─────────────────────────────────────────────────────────── */}
       <AnimatePresence>
-        {hasTitle && (
+        {showTitle && (
           <motion.div
             key="title"
-            initial={{ opacity: 0, y: 36 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: TITLE_MS / 1000, ease: [0.2, 0, 0.2, 1] }}
             style={{
               position: "absolute",
-              top: "57%",
+              top: "58%",
               left: 0, right: 0,
               textAlign: "center",
               zIndex: 20, pointerEvents: "none",
@@ -215,9 +187,9 @@ export default function WelcomePage({ onEnter }: Props) {
           >
             <div style={{
               fontFamily: "'Great Vibes', cursive",
-              fontSize: "clamp(40px, 12vw, 58px)",
+              fontSize: "clamp(40px, 12vw, 56px)",
               color: "#f5f0e8",
-              textShadow: "0 0 40px rgba(255,240,180,0.25), 0 2px 10px rgba(0,0,0,0.95)",
+              textShadow: "0 0 32px rgba(255,240,200,0.18), 0 2px 10px rgba(0,0,0,0.95)",
               lineHeight: 1.2,
             }}>
               My Digital Shoes
@@ -226,27 +198,38 @@ export default function WelcomePage({ onEnter }: Props) {
         )}
       </AnimatePresence>
 
-      {/* ── Idle state ────────────────────────────────────────────────────── */}
+      {/* ── Idle state: title + TAP TO ENTER ─────────────────────────────── */}
       <AnimatePresence>
         {phase === "idle" && (
           <motion.div
             key="idle-ui"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.2 } }}
-            transition={{ duration: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
+            transition={{ duration: 0.9 }}
             style={{
               position: "absolute",
-              bottom: "18%",
+              top: "58%",
               left: 0, right: 0,
               display: "flex", flexDirection: "column",
-              alignItems: "center",
+              alignItems: "center", gap: 26,
               zIndex: 20, pointerEvents: "none",
             }}
           >
+            <div style={{
+              fontFamily: "'Great Vibes', cursive",
+              fontSize: "clamp(40px, 12vw, 56px)",
+              color: "#f5f0e8",
+              textShadow: "0 0 32px rgba(255,240,200,0.18), 0 2px 10px rgba(0,0,0,0.95)",
+              lineHeight: 1.2,
+              textAlign: "center",
+            }}>
+              My Digital Shoes
+            </div>
+
             <motion.div
-              animate={{ opacity: [0.30, 0.80, 0.30] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              animate={{ opacity: [0.30, 0.85, 0.30] }}
+              transition={{ duration: 2.3, repeat: Infinity, ease: "easeInOut" }}
               style={{
                 fontSize: 11, fontWeight: 600, letterSpacing: "0.22em",
                 textTransform: "uppercase", color: "rgba(255,255,255,0.50)",
