@@ -228,10 +228,10 @@ export default function WelcomePage({ onEnter }: Props) {
             }}
           >
             <svg width={130} height={90} viewBox="0 0 130 90" fill="none">
-              <path d={SPIKE}    fill="#1a1a1a" stroke="rgba(255,255,255,0.10)" strokeWidth={1} />
-              <path d={UPPER}    fill="#1e1e1e" stroke="rgba(255,255,255,0.22)" strokeWidth={1.5} />
-              <path d={TOE_CAP}  fill="#252525" stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
-              <path d={SHEEN}    stroke="rgba(255,255,255,0.10)" strokeWidth={1.5} strokeLinecap="round" fill="none" />
+              <path d={SPIKE}    fill="#e8e8e8" stroke="rgba(255,255,255,0.60)" strokeWidth={1} />
+              <path d={UPPER}    fill="#f0f0f0" stroke="rgba(255,255,255,0.90)" strokeWidth={1.5} />
+              <path d={TOE_CAP}  fill="#d8d8d8" stroke="rgba(255,255,255,0.50)" strokeWidth={1} />
+              <path d={SHEEN}    stroke="rgba(255,255,255,0.60)" strokeWidth={1.5} strokeLinecap="round" fill="none" />
             </svg>
           </motion.div>
         )}
