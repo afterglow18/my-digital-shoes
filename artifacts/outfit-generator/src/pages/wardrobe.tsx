@@ -233,7 +233,7 @@ export default function WardrobePage() {
           <div
             style={{
               position: "absolute",
-              top: `calc(${ir.top - pH(ir, 0.008)}px + env(safe-area-inset-top))`,
+              top: `calc(${ir.top - pH(ir, 0.025)}px + env(safe-area-inset-top))`,
               left: 0, right: 0,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
               zIndex: 25,
@@ -243,7 +243,7 @@ export default function WardrobePage() {
           >
             <span style={{
               fontFamily: "'Great Vibes', cursive",
-              fontSize: Math.min(pH(ir, 0.038), pW(ir, 0.052)),
+              fontSize: Math.min(pH(ir, 0.030), pW(ir, 0.042)),
               color: "#ffffff",
               textShadow: "0 1px 4px rgba(255,255,255,0.3)",
               lineHeight: 1,
