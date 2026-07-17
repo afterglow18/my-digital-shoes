@@ -34,31 +34,6 @@ const FOOTPRINTS: { x: number; delay: number }[] = [
 
 interface Props { onEnter: () => void; }
 
-// ── Stiletto SVG — right-facing side view (toe → right, spike → down-left) ──
-// ViewBox 0 0 130 90
-const UPPER = `
-  M 10 60
-  C 8 46, 12 30, 26 20
-  C 48 8, 88 4, 116 12
-  C 124 15, 128 22, 126 32
-  C 123 40, 115 46, 106 48
-  L 26 54
-  C 18 54, 10 58, 10 60 Z
-`;
-const SPIKE = `
-  M 12 58
-  C 10 62, 8 68, 6 78
-  L 8 84 L 13 83
-  L 12 73
-  C 13 66, 15 61, 15 58 Z
-`;
-const TOE_CAP = `
-  M 106 48
-  C 118 46, 126 40, 126 32
-  C 126 24, 120 16, 112 14
-  C 118 20, 122 30, 120 40 Z
-`;
-const SHEEN = `M 30 26 C 60 16, 95 12, 118 18`;
 
 export default function WelcomePage({ onEnter }: Props) {
   const [phase, setPhase]       = useState<Phase>("idle");
@@ -227,12 +202,9 @@ export default function WelcomePage({ onEnter }: Props) {
               filter: "drop-shadow(0 12px 28px rgba(0,0,0,0.90)) drop-shadow(0 2px 4px rgba(255,255,255,0.05))",
             }}
           >
-            <svg width={130} height={90} viewBox="0 0 130 90" fill="none">
-              <path d={SPIKE}    fill="#e8e8e8" stroke="rgba(255,255,255,0.60)" strokeWidth={1} />
-              <path d={UPPER}    fill="#f0f0f0" stroke="rgba(255,255,255,0.90)" strokeWidth={1.5} />
-              <path d={TOE_CAP}  fill="#d8d8d8" stroke="rgba(255,255,255,0.50)" strokeWidth={1} />
-              <path d={SHEEN}    stroke="rgba(255,255,255,0.60)" strokeWidth={1.5} strokeLinecap="round" fill="none" />
-            </svg>
+            <div style={{ fontSize: 72, lineHeight: 1, filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.8))" }}>
+              👠
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
