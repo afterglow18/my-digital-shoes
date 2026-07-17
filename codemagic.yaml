@@ -8,10 +8,11 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.mydigitalshoes.app
-        team_id: QXGDJ93HP8
       vars:
         XCODE_PROJECT: "artifacts/outfit-generator/ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.mydigitalshoes.app"
+        APPLE_TEAM_ID: "QXGDJ93HP8"
       node: 20.11.0
 
     scripts:
@@ -23,9 +24,6 @@ workflows:
 
       - name: Build web app
         script: pnpm --filter @workspace/outfit-generator run build
-
-      - name: Install Capacitor CLI
-        script: pnpm --filter @workspace/outfit-generator exec cap --version || npm install -g @capacitor/cli
 
       - name: Sync Capacitor iOS
         script: |
@@ -52,7 +50,9 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
         beta_groups:
           - Internal Testers
