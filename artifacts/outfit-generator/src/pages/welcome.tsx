@@ -1,50 +1,63 @@
 /**
- * WelcomePage — Stiletto heel walks left → right, pauses, steps down,
- * "My Digital Shoes" fades in, then transitions into the app.
- * Auto-plays — no tap required.
+ * WelcomePage — top-down sneaker with lace-tying animation.
+ *
+ * IDLE    : sneaker with loose lace ends; pulsing "Tap to lace up" prompt.
+ * LACING  : loose ends retract to centre → bow strokes draw themselves in.
+ * ZOOMING : whole shoe scales up (camera dives in).
+ * HERO    : hero image crossfades.
+ * EXITING : screen fades out → onEnter().
  */
+import { useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-import { useEffect, useCallback, useRef, useState } from "react";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+type Phase = "idle" | "lacing" | "zooming" | "hero" | "exiting";
 
-// ── Timing ────────────────────────────────────────────────────────────────────
-const WALK_MS  = 1900;   // heel walks from off-screen left to centre
-const PAUSE_MS = 460;    // brief pause at centre
-const STEP_MS  = 380;    // heel steps down
-const HOLD_MS  = 1200;   // hold with logo visible
-const EXIT_MS  = 580;    // fade to app
+const LACE_MS = 650;
+const BOW_MS  = 700;
+const ZOOM_MS = 900;
+const HERO_MS = 700;
+const HOLD_MS = 380;
+const EXIT_MS = 620;
 
 interface Props { onEnter: () => void; }
 
-// ── Stiletto heel SVG (side-view, facing right) ───────────────────────────────
-// 200 × 148 viewBox. Thin heel post on left, pointed toe on right.
-const HEEL_PATH = `
-  M 22 132
-  L 36 132
-  L 38 88
-  C 48 87 85 88 125 87
-  C 148 86 166 82 174 76
-  C 177 72 178 65 176 57
-  C 174 49 167 38 156 30
-  C 140 19 112 12 86 11
-  C 66 10 48 15 36 24
-  C 24 34 18 48 16 62
-  C 15 74 15 84 18 88
-  L 20 88
-  Z
+// ── Sneaker top-down geometry (220 × 300 canvas, ankle at top, toe at bottom)
+const SHOE_PATH = `
+  M 110 46 C 150 44 188 62 196 94
+  L 200 220 C 200 258 170 288 110 290
+  C 50 288 20 258 20 220
+  L 24 94 C 32 62 70 44 110 46 Z
 `;
 
-const HEEL_HIGHLIGHT = "M 36 24 C 58 13 112 10 152 28";
-const HEEL_SOLE_CREASE = "M 38 88 C 70 86 130 87 174 76";
+// Centre tongue strip
+const TONGUE_PATH = `
+  M 84 55 L 136 55 L 136 210
+  C 136 223 124 230 110 230
+  C 96 230 84 223 84 210 Z
+`;
+
+// 5 eyelet row y-positions & paired x positions
+const EY = [84, 114, 144, 172, 198];
+const EL = [76, 72, 68, 64, 60];   // left eyelet x (spreading outward lower)
+const ER = [144, 148, 152, 156, 160]; // right eyelet x
+
+// Horizontal bar laces
+const BARS = EY.map((y, i) => ({ d: `M ${EL[i]} ${y} L ${ER[i]} ${y}` }));
+
+// Loose lace ends — curl from top eyelets outward/upward
+const LOOSE_LEFT_D  = `M ${EL[0]} ${EY[0]} C 58 68, 36 54, 18 42`;
+const LOOSE_RIGHT_D = `M ${ER[0]} ${EY[0]} C 162 68, 184 54, 202 42`;
+
+// Bow parts — each is a separate path drawn via stroke-dashoffset
+const BOW_LOOP_L = `M 110 80 C 98 72, 78 66, 70 72 C 60 80, 64 94, 78 96 C 92 98, 106 86, 110 80`;
+const BOW_LOOP_R = `M 110 80 C 122 72, 142 66, 150 72 C 160 80, 156 94, 142 96 C 128 98, 114 86, 110 80`;
+const BOW_KNOT   = `M 103 82 C 106 78, 114 78, 117 82 C 114 86, 106 86, 103 82`;
+const BOW_TAIL_L = `M 105 86 C 98 96, 86 108, 78 118`;
+const BOW_TAIL_R = `M 115 86 C 122 96, 134 108, 142 118`;
 
 export default function WelcomePage({ onEnter }: Props) {
-  const [logoVisible, setLogoVisible] = useState(false);
-  const [exiting,     setExiting]     = useState(false);
-  const [shadowReady, setShadowReady] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
   const calledRef = useRef(false);
-
-  const heelCtrl   = useAnimation();
-  const shadowCtrl = useAnimation();
 
   const finish = useCallback(() => {
     if (calledRef.current) return;
@@ -52,211 +65,241 @@ export default function WelcomePage({ onEnter }: Props) {
     onEnter();
   }, [onEnter]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const handleTap = useCallback(() => {
+    if (phase !== "idle") return;
+    setPhase("lacing");
 
-    const run = async () => {
-      // ── 1. Walk in from left to centre ──────────────────────────────────
-      // Y keyframes create a 4-step walking bob
-      await heelCtrl.start({
-        x: 0,
-        y: [0, -14, 0, -14, 0, -14, 0, -12, 0],
-        rotate: [-3, -1, -3, -1, -3, -1, -3, -1, 0],
-        transition: {
-          x:      { duration: WALK_MS / 1000, ease: [0.2, 0, 0.6, 1] },
-          y:      { duration: WALK_MS / 1000, times: [0, .12, .25, .37, .5, .62, .75, .87, 1], ease: "easeInOut" },
-          rotate: { duration: WALK_MS / 1000, times: [0, .12, .25, .37, .5, .62, .75, .87, 1] },
-        },
-      });
+    // After lace ends retract + bow draws
+    setTimeout(() => setPhase("zooming"), LACE_MS + BOW_MS + 120);
+    // After zoom
+    setTimeout(() => setPhase("hero"),    LACE_MS + BOW_MS + 120 + ZOOM_MS);
+    // After hero hold
+    setTimeout(() => setPhase("exiting"), LACE_MS + BOW_MS + 120 + ZOOM_MS + HOLD_MS);
+    // Fire onEnter
+    setTimeout(finish,                    LACE_MS + BOW_MS + 120 + ZOOM_MS + HOLD_MS + EXIT_MS);
+  }, [phase, finish]);
 
-      if (cancelled) return;
-
-      // ── 2. Pause at centre ───────────────────────────────────────────────
-      await new Promise(r => setTimeout(r, PAUSE_MS));
-      if (cancelled) return;
-
-      // ── 3. Step down — heel drops to "floor" with a small bounce ────────
-      await heelCtrl.start({
-        y: [0, -10, 6, 0],
-        rotate: [0, -4, 3, 2],
-        transition: { duration: STEP_MS / 1000, ease: "easeOut" },
-      });
-
-      if (cancelled) return;
-      setShadowReady(true);
-      shadowCtrl.start({ opacity: 0.45, scaleX: 1, transition: { duration: 0.25 } });
-
-      // ── 4. Logo fades in ─────────────────────────────────────────────────
-      setLogoVisible(true);
-
-      // ── 5. Hold, then exit ───────────────────────────────────────────────
-      await new Promise(r => setTimeout(r, HOLD_MS));
-      if (cancelled) return;
-
-      setExiting(true);
-      await new Promise(r => setTimeout(r, EXIT_MS));
-      finish();
-    };
-
-    run();
-    return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const isLacing  = phase === "lacing";
+  const bowVisible = isLacing || phase === "zooming" || phase === "hero" || phase === "exiting";
 
   return (
     <motion.div
-      animate={{ opacity: exiting ? 0 : 1 }}
+      animate={{ opacity: phase === "exiting" ? 0 : 1 }}
       transition={{ duration: EXIT_MS / 1000, ease: "easeIn" }}
+      onClick={handleTap}
       style={{
         position: "fixed", inset: 0, zIndex: 200,
-        background: "#070707",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        background: "#0a0a0a",
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
         overflow: "hidden",
+        cursor: phase === "idle" ? "pointer" : "default",
+        userSelect: "none",
       }}
     >
-      {/* Ambient spotlight */}
+      {/* Ambient glow */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 50% 38% at 50% 46%, rgba(70,70,90,0.32) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 55% 40% at 50% 48%, rgba(60,60,80,0.28) 0%, transparent 70%)",
       }} />
 
-      {/* Floor line */}
-      <div style={{
-        position: "absolute",
-        top: "52%",
-        left: "8%", right: "8%",
-        height: 1,
-        background: "linear-gradient(to right, transparent, rgba(255,255,255,0.07), transparent)",
-        pointerEvents: "none",
-      }} />
+      {/* Hero image (fades in during hero phase, sits behind shoe) */}
+      <AnimatePresence>
+        {(phase === "hero" || phase === "exiting") && (
+          <motion.img
+            key="hero"
+            src="/handbag-hero.jpg"
+            alt=""
+            initial={{ opacity: 0, scale: 1.08 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: HERO_MS / 1000, ease: "easeOut" }}
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", zIndex: 0,
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Heel shadow on floor */}
+      {/* Shoe + branding container */}
       <motion.div
-        animate={shadowCtrl}
-        initial={{ opacity: 0, scaleX: 0.2 }}
+        animate={
+          phase === "zooming" || phase === "hero" || phase === "exiting"
+            ? { scale: 6, opacity: phase === "exiting" ? 0 : 1 }
+            : { scale: 1, opacity: 1 }
+        }
+        transition={{ duration: ZOOM_MS / 1000, ease: [0.4, 0, 0.2, 1] }}
         style={{
-          position: "absolute",
-          top: "calc(52% + 2px)",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: 100, height: 16,
-          borderRadius: "50%",
-          background: "radial-gradient(ellipse, rgba(0,0,0,0.7) 0%, transparent 70%)",
-          filter: "blur(5px)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", gap: 20,
+          position: "relative", zIndex: 10,
         }}
-      />
+      >
+        {/* ── App wordmark ────────────────────────────────────────────────── */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            fontFamily: "'Great Vibes', cursive",
+            fontSize: "clamp(34px, 10vw, 50px)",
+            color: "#f0f0f0",
+            textShadow: "0 0 24px rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.9)",
+            lineHeight: 1.15,
+          }}>
+            My Digital Shoes
+          </div>
+        </div>
 
-      {/* Centre column: heel + logo */}
-      <div style={{
-        display: "flex", flexDirection: "column",
-        alignItems: "center", gap: 28,
-        position: "relative",
-      }}>
-
-        {/* Stiletto heel — starts off-screen left */}
-        <motion.div
-          animate={heelCtrl}
-          initial={{ x: "-110vw", y: 0, rotate: -3 }}
+        {/* ── Sneaker SVG ─────────────────────────────────────────────────── */}
+        <motion.svg
+          width={220} height={300}
+          viewBox="0 0 220 300"
+          fill="none"
           style={{
-            originX: "50%", originY: "90%",
             filter:
-              "drop-shadow(0 18px 36px rgba(0,0,0,0.9)) " +
-              "drop-shadow(0 4px 10px rgba(255,255,255,0.05))",
+              "drop-shadow(0 12px 32px rgba(0,0,0,0.85)) " +
+              "drop-shadow(0 2px 8px rgba(255,255,255,0.04))",
           }}
         >
-          <svg
-            width={200} height={148}
-            viewBox="0 0 200 148"
-            fill="none"
-          >
-            {/* Main silhouette — bright white stiletto pump */}
-            <path d={HEEL_PATH} fill="white" opacity={0.97} />
+          {/* Outer shoe body */}
+          <path d={SHOE_PATH} fill="#1c1c1c" stroke="rgba(255,255,255,0.18)" strokeWidth={2} />
 
-            {/* Specular highlight along vamp top */}
-            <path
-              d={HEEL_HIGHLIGHT}
-              stroke="rgba(255,255,255,0.30)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              fill="none"
-            />
+          {/* Tongue */}
+          <path d={TONGUE_PATH} fill="#252525" stroke="rgba(255,255,255,0.10)" strokeWidth={1.5} />
 
-            {/* Sole / outsole crease (subtle depth) */}
-            <path
-              d={HEEL_SOLE_CREASE}
-              stroke="rgba(0,0,0,0.22)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              fill="none"
-            />
+          {/* Stitching line down tongue centre */}
+          <line x1={110} y1={60} x2={110} y2={220}
+            stroke="rgba(255,255,255,0.08)" strokeWidth={1}
+            strokeDasharray="4 5" strokeLinecap="round" />
 
-            {/* Left edge of heel post — bright catch-light */}
-            <line
-              x1="23" y1="90" x2="21" y2="130"
-              stroke="rgba(255,255,255,0.28)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </motion.div>
+          {/* Bar laces */}
+          {BARS.map((b, i) => (
+            <path key={i} d={b.d}
+              stroke="rgba(255,255,255,0.75)" strokeWidth={2.5} strokeLinecap="round" />
+          ))}
 
-        {/* Logo — fades in after step */}
-        <AnimatePresence>
-          {logoVisible && (
-            <motion.div
-              key="logo"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.75, ease: "easeOut" }}
-              style={{ textAlign: "center" }}
-            >
-              <div style={{
-                fontFamily: "'Great Vibes', cursive",
-                fontWeight: 400,
-                fontSize: "clamp(38px, 11vw, 56px)",
-                color: "#f2f2f2",
-                textShadow:
-                  "0 0 28px rgba(255,255,255,0.12), 0 2px 10px rgba(0,0,0,0.95)",
-                lineHeight: 1.15,
-              }}>
-                My Digital<br />Shoes
-              </div>
-              <div style={{
-                fontSize: 10,
-                fontWeight: 500,
-                letterSpacing: "0.28em",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.38)",
-                marginTop: 8,
-              }}>
-                your collection, curated
-              </div>
-            </motion.div>
+          {/* Eyelets */}
+          {EY.map((y, i) => (
+            <g key={i}>
+              <circle cx={EL[i]} cy={y} r={4.5} fill="#0a0a0a" stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+              <circle cx={ER[i]} cy={y} r={4.5} fill="#0a0a0a" stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+            </g>
+          ))}
+
+          {/* ── Loose lace ends (hidden once lacing starts) ───────────────── */}
+          <motion.path
+            d={LOOSE_LEFT_D}
+            stroke="rgba(255,255,255,0.80)" strokeWidth={2.5} strokeLinecap="round" fill="none"
+            animate={isLacing || bowVisible
+              ? { opacity: 0, pathLength: 0 }
+              : { opacity: 1, pathLength: 1 }}
+            initial={{ opacity: 1, pathLength: 1 }}
+            transition={{ duration: LACE_MS / 1000, ease: "easeIn" }}
+          />
+          <motion.path
+            d={LOOSE_RIGHT_D}
+            stroke="rgba(255,255,255,0.80)" strokeWidth={2.5} strokeLinecap="round" fill="none"
+            animate={isLacing || bowVisible
+              ? { opacity: 0, pathLength: 0 }
+              : { opacity: 1, pathLength: 1 }}
+            initial={{ opacity: 1, pathLength: 1 }}
+            transition={{ duration: LACE_MS / 1000, ease: "easeIn" }}
+          />
+
+          {/* ── Bow (draws in after lace ends retract) ────────────────────── */}
+          {bowVisible && (
+            <>
+              {/* Left bow loop */}
+              <motion.path
+                d={BOW_LOOP_L}
+                stroke="rgba(255,255,255,0.85)" strokeWidth={2.5} strokeLinecap="round" fill="none"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: BOW_MS / 1000 * 0.6, ease: "easeOut", delay: 0.05 }}
+              />
+              {/* Right bow loop */}
+              <motion.path
+                d={BOW_LOOP_R}
+                stroke="rgba(255,255,255,0.85)" strokeWidth={2.5} strokeLinecap="round" fill="none"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: BOW_MS / 1000 * 0.6, ease: "easeOut", delay: 0.12 }}
+              />
+              {/* Knot */}
+              <motion.path
+                d={BOW_KNOT}
+                stroke="rgba(255,255,255,0.70)" strokeWidth={2} fill="rgba(255,255,255,0.15)"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                style={{ transformOrigin: "110px 82px" }}
+                transition={{ duration: 0.25, ease: "backOut", delay: BOW_MS / 1000 * 0.5 }}
+              />
+              {/* Left tail */}
+              <motion.path
+                d={BOW_TAIL_L}
+                stroke="rgba(255,255,255,0.70)" strokeWidth={2.5} strokeLinecap="round" fill="none"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: BOW_MS / 1000 * 0.4, ease: "easeOut", delay: BOW_MS / 1000 * 0.55 }}
+              />
+              {/* Right tail */}
+              <motion.path
+                d={BOW_TAIL_R}
+                stroke="rgba(255,255,255,0.70)" strokeWidth={2.5} strokeLinecap="round" fill="none"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: BOW_MS / 1000 * 0.4, ease: "easeOut", delay: BOW_MS / 1000 * 0.55 }}
+              />
+            </>
           )}
-        </AnimatePresence>
-      </div>
+        </motion.svg>
+      </motion.div>
 
-      {/* Footer links */}
+      {/* ── "Tap to lace up" prompt (idle only) ─────────────────────────────── */}
+      <AnimatePresence>
+        {phase === "idle" && (
+          <motion.div
+            key="prompt"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: [0.5, 1, 0.5], y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{
+              opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 0.4 },
+            }}
+            style={{
+              position: "absolute", bottom: "15%",
+              fontSize: 11, fontWeight: 600, letterSpacing: "0.22em",
+              textTransform: "uppercase", color: "rgba(255,255,255,0.40)",
+              pointerEvents: "none",
+            }}
+          >
+            TAP TO LACE UP
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Footer */}
       <div style={{
         position: "fixed",
         bottom: "calc(env(safe-area-inset-bottom) + 10px)",
         left: 0, right: 0,
         display: "flex", flexDirection: "column",
         alignItems: "center", gap: 4, zIndex: 210,
+        pointerEvents: "none",
       }}>
-        <a
-          href="https://classy-alpaca-441.notion.site/Privacy-Policy-39682db6065380b19dedcb108d4a0ef4"
+        <a href="https://classy-alpaca-441.notion.site/Privacy-Policy-39682db6065380b19dedcb108d4a0ef4"
           target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.18)", textDecoration: "none", letterSpacing: "0.02em" }}
-        >
+          style={{
+            fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.18)",
+            textDecoration: "none", letterSpacing: "0.02em", pointerEvents: "auto",
+          }}>
           Privacy Policy
         </a>
-        <a
-          href="https://app.notion.com/p/My-Digital-Closet-Support-39782db60653802a9088dcbae84c0527?source=copy_link"
+        <a href="https://app.notion.com/p/My-Digital-Closet-Support-39782db60653802a9088dcbae84c0527?source=copy_link"
           target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.18)", textDecoration: "none", letterSpacing: "0.02em" }}
-        >
+          style={{
+            fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.18)",
+            textDecoration: "none", letterSpacing: "0.02em", pointerEvents: "auto",
+          }}>
           Support
         </a>
       </div>
