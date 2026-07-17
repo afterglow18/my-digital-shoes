@@ -13,12 +13,9 @@ workflows:
         XCODE_SCHEME: "App"
         BUNDLE_ID: "com.mydigitalshoes.app"
         APPLE_TEAM_ID: "QXGDJ93HP8"
-      node: 20.11.0
+      node: 22.13.0
 
     scripts:
-      - name: Install pnpm
-        script: npm install -g pnpm
-
       - name: Install dependencies
         script: pnpm install --frozen-lockfile
 
