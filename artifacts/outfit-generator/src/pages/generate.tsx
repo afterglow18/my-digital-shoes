@@ -22,8 +22,8 @@ import { useQueryClient } from "@tanstack/react-query";
 const IMG_W = 1086;
 const IMG_H = 1448;
 const NAV_H = 90;
-const PLUM       = "#1c1c1c";   // charcoal (matches app icon)
-const PLUM_DARK  = "#0a0a0a";   // near-black
+const PLUM       = "#707070";   // mid grey
+const PLUM_DARK  = "#555555";   // dark grey
 const GOLD       = "#d0d0d0";   // light gray (border / accent)
 const GOLD_LIGHT = "#ffffff";   // white text
 

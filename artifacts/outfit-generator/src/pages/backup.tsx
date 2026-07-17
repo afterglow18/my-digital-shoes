@@ -49,7 +49,7 @@ function PurpleButton({
                  text-white transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
                  disabled:opacity-50 disabled:cursor-not-allowed"
       style={{
-        background: disabled ? '#2a2a2a' : 'linear-gradient(to bottom, #1c1c1c, #0a0a0a)',
+        background: disabled ? '#999999' : 'linear-gradient(to bottom, #707070, #555555)',
         border: '2.5px solid rgba(255,255,255,0.18)',
         boxShadow: disabled ? 'none' : '3px 3px 0 rgba(0,0,0,0.85)',
         letterSpacing: '0.07em',
@@ -297,7 +297,7 @@ export default function AccountPage() {
                            transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: lockEnabled
-                    ? 'linear-gradient(to bottom, #1c1c1c, #0a0a0a)'
+                    ? 'linear-gradient(to bottom, #707070, #555555)'
                     : '#e5e7eb',
                   boxShadow: '2px 2px 0 rgba(0,0,0,0.25)',
                 }}
