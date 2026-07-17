@@ -165,8 +165,11 @@ export default function WelcomePage({ onEnter }: Props) {
 
       {/* ── Shoe on pedestal ─────────────────────────────────────────────── */}
       <motion.div
-        animate={{ filter: isLit ? "brightness(1)" : "brightness(0.08)" }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
+        animate={{
+          filter: isLit ? "brightness(1)" : "brightness(0.08)",
+          opacity: (phase === "hero" || phase === "exiting") ? 0 : 1,
+        }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
         style={{
           position: "absolute",
           top: "30%",
