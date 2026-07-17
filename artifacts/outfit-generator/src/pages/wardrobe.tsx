@@ -282,22 +282,26 @@ export default function WardrobePage() {
             </button>
           )}
 
-          {/* 4 shelf rows — heading pinned to top of section, photos below at consistent height */}
+          {/* 4 shelf rows — label top for heels/sandals, label bottom for sneakers/boots */}
           {ROWS.map(({ key, btnLabel }, rowIdx) => {
-            const lm    = LM.rows[rowIdx];
-            const items = rowData[key];
-            const secTop = pY(ir, lm.sectionTop);
-            const secH   = pH(ir, lm.shelfY - lm.sectionTop);
+            const lm      = LM.rows[rowIdx];
+            const items   = rowData[key];
+            const secTop  = pY(ir, lm.sectionTop);
+            const secH    = pH(ir, lm.shelfY - lm.sectionTop);
+            const labelBottom = rowIdx === 1 || rowIdx === 2; // sneakers & boots
+
+            const labelTop     = labelBottom ? pY(ir, lm.shelfY) : secTop;
+            const carouselTop  = labelBottom ? secTop             : secTop + labelH;
 
             return (
               <React.Fragment key={key}>
-                {/* Heading — anchored to top of section, tappable to add */}
+                {/* Heading — top for rows 0 & 3, below shelf for rows 1 & 2 */}
                 <button
                   onClick={addHandlers[key]}
                   aria-label={btnLabel}
                   data-testid={`add-btn-${key}`}
                   style={{
-                    position: "absolute", top: secTop, left: carLeft,
+                    position: "absolute", top: labelTop, left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 24, background: "none", border: "none", cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
@@ -314,13 +318,13 @@ export default function WardrobePage() {
                   </span>
                 </button>
 
-                {/* Carousel — starts immediately below heading, same height every row */}
+                {/* Carousel */}
                 {items.length > 0 && (
                   <div
                     data-testid={`row-${key}`}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH, left: carLeft,
+                      top: carouselTop, left: carLeft,
                       width: carW, height: consistentPhotoH,
                       zIndex: 10, overflow: "visible",
                     }}
@@ -335,15 +339,15 @@ export default function WardrobePage() {
                   </div>
                 )}
 
-                {/* Empty-state tap zone — full section, only when no items */}
+                {/* Empty-state tap zone */}
                 {items.length === 0 && (
                   <button
                     onClick={addHandlers[key]}
                     aria-label={btnLabel}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH, left: carLeft,
-                      width: carW, height: secH - labelH,
+                      top: carouselTop, left: carLeft,
+                      width: carW, height: labelBottom ? secH : secH - labelH,
                       zIndex: 22, background: "transparent", border: "none", cursor: "pointer",
                     }}
                   />
