@@ -10,12 +10,11 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Phase = "idle" | "sliding" | "title" | "hero" | "exiting";
+type Phase = "idle" | "sliding" | "hero" | "exiting";
 
 const SLIDE_MS   = 480;
 const STAGGER_MS = 130;
-const SETTLE_MS  = 260;
-const TITLE_MS   = 500;
+const SETTLE_MS  = 400;
 const HERO_MS    = 700;
 const EXIT_MS    = 600;
 
@@ -44,19 +43,16 @@ export default function WelcomePage({ onEnter }: Props) {
     if (phase !== "idle") return;
 
     const t0 = totalSlide + SETTLE_MS;
-    const t1 = t0 + TITLE_MS;
-    const t2 = t1 + HERO_MS;
-    const t3 = t2 + EXIT_MS;
+    const t1 = t0 + HERO_MS;
+    const t2 = t1 + EXIT_MS;
 
     setPhase("sliding");
-    setTimeout(() => setPhase("title"),   t0);
-    setTimeout(() => setPhase("hero"),    t1);
-    setTimeout(() => setPhase("exiting"), t2);
-    setTimeout(finish,                    t3);
+    setTimeout(() => setPhase("hero"),    t0);
+    setTimeout(() => setPhase("exiting"), t1);
+    setTimeout(finish,                    t2);
   }, [phase, finish]);
 
   const shoesOnShelf = phase !== "idle";
-  const showTitle    = phase === "title" || phase === "hero";
 
   return (
     <motion.div
@@ -160,38 +156,6 @@ export default function WelcomePage({ onEnter }: Props) {
         }} />
       </motion.div>
 
-      {/* ── Title rises after shoes land ──────────────────────────────────── */}
-      <AnimatePresence>
-        {showTitle && (
-          <motion.div
-            key="title"
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, transition: { duration: 0.18, ease: "easeIn" } }}
-            transition={{ duration: TITLE_MS / 1000, ease: [0.2, 0, 0.2, 1] }}
-            style={{
-              position: "absolute", top: "58%",
-              left: 0, right: 0, textAlign: "center",
-              zIndex: 20, pointerEvents: "none",
-            }}
-          >
-            <div style={{
-              fontFamily: "'Great Vibes', cursive",
-              fontSize: "clamp(26px, 8vw, 36px)",
-              color: "rgba(255,255,255,0.80)",
-              textShadow: "0 2px 10px rgba(0,0,0,0.80)",
-              lineHeight: 1.3,
-            }}>Welcome to</div>
-            <div style={{
-              fontFamily: "'Great Vibes', cursive",
-              fontSize: "clamp(40px, 12vw, 56px)",
-              color: "#f5f0e8",
-              textShadow: "0 0 32px rgba(255,240,200,0.18), 0 2px 10px rgba(0,0,0,0.95)",
-              lineHeight: 1.2,
-            }}>My Digital Shoes</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Idle state ────────────────────────────────────────────────────── */}
       <AnimatePresence>
