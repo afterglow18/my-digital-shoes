@@ -1,268 +1,110 @@
 /**
- * WelcomePage — shoes line themselves up on a shelf.
- *
- * IDLE     : empty shelf, "TAP TO ENTER" pulsing.
- * SLIDING  : four shoes slide in from off-screen and snap into place.
- * TITLE    : "My Digital Shoes" rises in below the shelf.
- * HERO     : hero image crossfades over the scene.
- * EXITING  : screen fades out → onEnter().
+ * WelcomePage — hero image with title overlay and tap to enter.
  */
 import { useState, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-
-type Phase = "idle" | "sliding" | "title" | "hero" | "exiting";
-
-// Each shoe slides in staggered; last lands at SLIDE_MS + 3 * STAGGER_MS
-const SLIDE_MS   = 480;
-const STAGGER_MS = 130;
-const SETTLE_MS  = 260;   // brief pause after last shoe lands
-const TITLE_MS   = 500;
-const HERO_MS    = 700;
-const EXIT_MS    = 600;
-
-const SHOES = [
-  { emoji: "👟", label: "Sneaker", dir: -1, stagger: 0   },
-  { emoji: "👠", label: "Heel",    dir:  1, stagger: 1   },
-  { emoji: "👢", label: "Boot",    dir: -1, stagger: 2   },
-  { emoji: "🩴", label: "Sandal",  dir:  1, stagger: 3   },
-];
-
-const totalSlide = SLIDE_MS + STAGGER_MS * 3;
+import { motion } from "framer-motion";
 
 interface Props { onEnter: () => void; }
 
+const EXIT_MS = 600;
+
 export default function WelcomePage({ onEnter }: Props) {
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [exiting, setExiting] = useState(false);
   const calledRef = useRef(false);
 
-  const finish = useCallback(() => {
-    if (calledRef.current) return;
-    calledRef.current = true;
-    onEnter();
-  }, [onEnter]);
-
   const handleTap = useCallback(() => {
-    if (phase !== "idle") return;
-
-    const t0 = totalSlide + SETTLE_MS;          // title starts
-    const t1 = t0 + TITLE_MS;                   // hero starts
-    const t2 = t1 + HERO_MS;                    // exit starts
-    const t3 = t2 + EXIT_MS;                    // fire onEnter
-
-    setPhase("sliding");
-    setTimeout(() => setPhase("title"),   t0);
-    setTimeout(() => setPhase("hero"),    t1);
-    setTimeout(() => setPhase("exiting"), t2);
-    setTimeout(finish,                    t3);
-  }, [phase, finish]);
-
-  const shoesOnShelf = phase !== "idle";
-  const showTitle    = phase === "title" || phase === "hero";
+    if (exiting) return;
+    setExiting(true);
+    setTimeout(() => {
+      if (calledRef.current) return;
+      calledRef.current = true;
+      onEnter();
+    }, EXIT_MS);
+  }, [exiting, onEnter]);
 
   return (
     <motion.div
-      animate={{ opacity: phase === "exiting" ? 0 : 1 }}
+      animate={{ opacity: exiting ? 0 : 1 }}
       transition={{ duration: EXIT_MS / 1000, ease: "easeIn" }}
       onClick={handleTap}
       style={{
         position: "fixed", inset: 0, zIndex: 200,
-        background: "#080808",
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        overflow: "hidden",
-        cursor: phase === "idle" ? "pointer" : "default",
+        cursor: "pointer",
         userSelect: "none",
       }}
     >
-      {/* Subtle radial glow behind the shelf area */}
+      {/* Hero image — full cover */}
+      <img
+        src="/handbag-hero.jpg"
+        alt=""
+        style={{
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%",
+          objectFit: "cover", zIndex: 0,
+        }}
+      />
+
+      {/* Dark gradient overlay for legibility */}
       <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 70% 35% at 50% 48%, rgba(80,70,60,0.18) 0%, transparent 70%)",
+        position: "absolute", inset: 0, zIndex: 1,
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.65) 100%)",
+        pointerEvents: "none",
       }} />
 
-      {/* ── Hero image ─────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {(phase === "hero" || phase === "exiting") && (
-          <motion.img
-            key="hero"
-            src="/handbag-hero.jpg"
-            alt=""
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: HERO_MS / 1000, ease: "easeOut" }}
-            style={{
-              position: "absolute", inset: 0, width: "100%", height: "100%",
-              objectFit: "cover", zIndex: 0,
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* ── Shelf + shoes ─────────────────────────────────────────────────── */}
-      <motion.div
-        animate={{ opacity: (phase === "hero" || phase === "exiting") ? 0 : 1 }}
-        transition={{ duration: 0.4 }}
-        style={{
-          position: "absolute",
-          top: "34%",
-          left: 0, right: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          zIndex: 10,
-        }}
-      >
-        {/* Shoe row */}
+      {/* Title + prompt */}
+      <div style={{
+        position: "absolute", bottom: "22%",
+        left: 0, right: 0,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", gap: 22,
+        zIndex: 10, pointerEvents: "none",
+      }}>
         <div style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "flex-end",
-          justifyContent: "center",
-          gap: "clamp(18px, 6vw, 36px)",
-          paddingBottom: 10,
-          width: "100%",
-          overflow: "hidden",
+          fontFamily: "'Great Vibes', cursive",
+          fontSize: "clamp(42px, 13vw, 60px)",
+          color: "#fff",
+          textShadow: "0 2px 16px rgba(0,0,0,0.70)",
+          lineHeight: 1.2,
+          textAlign: "center",
         }}>
-          {SHOES.map((shoe) => (
-            <motion.div
-              key={shoe.label}
-              initial={{ x: shoe.dir * 500, opacity: 0 }}
-              animate={
-                shoesOnShelf
-                  ? { x: 0, opacity: 1 }
-                  : { x: shoe.dir * 500, opacity: 0 }
-              }
-              transition={{
-                type: "spring",
-                stiffness: 320,
-                damping: 24,
-                delay: shoe.stagger * (STAGGER_MS / 1000),
-              }}
-              style={{
-                fontSize: "clamp(44px, 11vw, 64px)",
-                lineHeight: 1,
-                filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.7))",
-              }}
-            >
-              {shoe.emoji}
-            </motion.div>
-          ))}
+          My Digital Shoes
         </div>
 
-        {/* Shelf plank */}
-        <div style={{
-          width: "clamp(260px, 72vw, 380px)",
-          height: 10,
-          borderRadius: "5px 5px 3px 3px",
-          background: "linear-gradient(to bottom, #c8a97a, #9e7a4e)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.65), 0 1px 0 rgba(255,255,255,0.08) inset",
-        }} />
-        {/* Shelf underside shadow */}
-        <div style={{
-          width: "clamp(240px, 68vw, 360px)",
-          height: 5,
-          borderRadius: "0 0 4px 4px",
-          background: "rgba(0,0,0,0.35)",
-          filter: "blur(3px)",
-          marginTop: 1,
-        }} />
-      </motion.div>
+        <motion.div
+          animate={{ opacity: [0.35, 0.90, 0.35] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            fontSize: 11, fontWeight: 600, letterSpacing: "0.22em",
+            textTransform: "uppercase", color: "rgba(255,255,255,0.70)",
+          }}
+        >
+          TAP TO ENTER
+        </motion.div>
+      </div>
 
-      {/* ── Title ─────────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showTitle && (
-          <motion.div
-            key="title"
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: TITLE_MS / 1000, ease: [0.2, 0, 0.2, 1] }}
-            style={{
-              position: "absolute",
-              top: "58%",
-              left: 0, right: 0,
-              textAlign: "center",
-              zIndex: 20, pointerEvents: "none",
-            }}
-          >
-            <div style={{
-              fontFamily: "'Great Vibes', cursive",
-              fontSize: "clamp(40px, 12vw, 56px)",
-              color: "#f5f0e8",
-              textShadow: "0 0 32px rgba(255,240,200,0.18), 0 2px 10px rgba(0,0,0,0.95)",
-              lineHeight: 1.2,
-            }}>
-              My Digital Shoes
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Idle state: title + TAP TO ENTER ─────────────────────────────── */}
-      <AnimatePresence>
-        {phase === "idle" && (
-          <motion.div
-            key="idle-ui"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.15 } }}
-            transition={{ duration: 0.9 }}
-            style={{
-              position: "absolute",
-              top: "58%",
-              left: 0, right: 0,
-              display: "flex", flexDirection: "column",
-              alignItems: "center", gap: 26,
-              zIndex: 20, pointerEvents: "none",
-            }}
-          >
-            <div style={{
-              fontFamily: "'Great Vibes', cursive",
-              fontSize: "clamp(40px, 12vw, 56px)",
-              color: "#f5f0e8",
-              textShadow: "0 0 32px rgba(255,240,200,0.18), 0 2px 10px rgba(0,0,0,0.95)",
-              lineHeight: 1.2,
-              textAlign: "center",
-            }}>
-              My Digital Shoes
-            </div>
-
-            <motion.div
-              animate={{ opacity: [0.30, 0.85, 0.30] }}
-              transition={{ duration: 2.3, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                fontSize: 11, fontWeight: 600, letterSpacing: "0.22em",
-                textTransform: "uppercase", color: "rgba(255,255,255,0.50)",
-              }}
-            >
-              TAP TO ENTER
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Footer links ───────────────────────────────────────────────────── */}
+      {/* Footer links */}
       <div style={{
-        position: "fixed",
+        position: "absolute",
         bottom: "calc(env(safe-area-inset-bottom) + 10px)",
         left: 0, right: 0,
         display: "flex", flexDirection: "column",
-        alignItems: "center", gap: 4, zIndex: 210,
-        pointerEvents: "none",
+        alignItems: "center", gap: 4, zIndex: 10,
       }}>
         <a href="https://classy-alpaca-441.notion.site/Privacy-Policy-39682db6065380b19dedcb108d4a0ef4"
           target="_blank" rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
           style={{
-            fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.18)",
-            textDecoration: "none", letterSpacing: "0.02em", pointerEvents: "auto",
+            fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.40)",
+            textDecoration: "none", letterSpacing: "0.02em",
           }}>
           Privacy Policy
         </a>
         <a href="https://app.notion.com/p/My-Digital-Closet-Support-39782db60653802a9088dcbae84c0527?source=copy_link"
           target="_blank" rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
           style={{
-            fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.18)",
-            textDecoration: "none", letterSpacing: "0.02em", pointerEvents: "auto",
+            fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.40)",
+            textDecoration: "none", letterSpacing: "0.02em",
           }}>
           Support
         </a>
