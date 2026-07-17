@@ -30,10 +30,11 @@ workflows:
           rm -rf node_modules
           rm -rf artifacts/outfit-generator/node_modules
           pnpm install --frozen-lockfile --force
-          pnpm exec rollup --version
 
       - name: Build web app
-        script: pnpm --filter @workspace/outfit-generator build
+        script: |
+          set -e
+          pnpm --filter @workspace/outfit-generator build
 
       - name: Sync Capacitor iOS
         script: |
