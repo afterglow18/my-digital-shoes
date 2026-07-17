@@ -59,27 +59,45 @@ export default function WelcomePage({ onEnter }: Props) {
         alignItems: "center", gap: 22,
         zIndex: 10, pointerEvents: "none",
       }}>
-        <div style={{
-          fontFamily: "'Great Vibes', cursive",
-          fontSize: "clamp(42px, 13vw, 60px)",
-          color: "#fff",
-          textShadow: "0 2px 16px rgba(0,0,0,0.70)",
-          lineHeight: 1.2,
-          textAlign: "center",
-        }}>
-          My Digital Shoes
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            fontFamily: "'Great Vibes', cursive",
+            fontSize: "clamp(26px, 8vw, 38px)",
+            color: "rgba(255,255,255,0.85)",
+            textShadow: "0 2px 12px rgba(0,0,0,0.60)",
+            lineHeight: 1.3,
+          }}>
+            Welcome to
+          </div>
+          <div style={{
+            fontFamily: "'Great Vibes', cursive",
+            fontSize: "clamp(42px, 13vw, 60px)",
+            color: "#fff",
+            textShadow: "0 2px 16px rgba(0,0,0,0.70)",
+            lineHeight: 1.2,
+          }}>
+            My Digital Shoes
+          </div>
         </div>
 
-        <motion.div
-          animate={{ opacity: [0.35, 0.90, 0.35] }}
+        <motion.button
+          animate={{ opacity: [0.75, 1, 0.75] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+          onClick={handleTap}
           style={{
-            fontSize: 11, fontWeight: 600, letterSpacing: "0.22em",
-            textTransform: "uppercase", color: "rgba(255,255,255,0.70)",
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.22em",
+            textTransform: "uppercase", color: "#fff",
+            background: "rgba(255,255,255,0.15)",
+            border: "1.5px solid rgba(255,255,255,0.55)",
+            borderRadius: 40,
+            padding: "10px 28px",
+            cursor: "pointer",
+            backdropFilter: "blur(4px)",
+            pointerEvents: "auto",
           }}
         >
           TAP TO ENTER
-        </motion.div>
+        </motion.button>
       </div>
 
       {/* Footer links */}
