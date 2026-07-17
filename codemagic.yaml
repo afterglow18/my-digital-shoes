@@ -8,6 +8,7 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.mydigitalshoes.app
+        team_id: QXGDJ93HP8
       vars:
         XCODE_PROJECT: "artifacts/outfit-generator/ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
