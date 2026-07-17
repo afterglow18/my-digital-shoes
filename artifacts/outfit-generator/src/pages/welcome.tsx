@@ -16,9 +16,9 @@ type Phase = "idle" | "sweeping" | "caught" | "title" | "hero" | "exiting";
 const SWEEP_MS     = 580;
 const CATCH_MS     = 100;
 const TITLE_MS     = 220;
-const HOLD_MS      = 280;
+const HOLD_MS      = 0;
 const HERO_MS      = 750;
-const HERO_HOLD_MS = 900;
+const HERO_HOLD_MS = 0;
 const EXIT_MS      = 600;
 
 interface Props { onEnter: () => void; }
