@@ -3,13 +3,6 @@ lockfileVersion: '9.0'
 settings:
   autoInstallPeers: false
   excludeLinksFromLockfile: false
-  supportedArchitectures:
-    cpu:
-      - x64
-      - arm64
-    os:
-      - linux
-      - darwin
 
 catalogs:
   default:
