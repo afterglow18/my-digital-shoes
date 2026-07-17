@@ -18,39 +18,19 @@ workflows:
     scripts:
       - name: Install pnpm
         script: |
-          corepack disable
-          npm install -g pnpm@11.13.1 --force
+          corepack enable
+          corepack prepare pnpm@10.28.2 --activate
 
       - name: Install dependencies
         script: |
-          rm -f pnpm-lock.yaml
-          pnpm config set store-dir /tmp/pnpm-store
-          pnpm install
-
-      - name: Install macOS ARM64 native binaries
-        script: |
-          # These packages load via require('pkg-name') so root node_modules works
-          for PKG_URL in \
-            "https://registry.npmjs.org/@rollup/rollup-darwin-arm64/-/rollup-darwin-arm64-4.62.2.tgz @rollup/rollup-darwin-arm64" \
-            "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.3.1.tgz @tailwindcss/oxide-darwin-arm64" \
-            "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.27.3.tgz @esbuild/darwin-arm64"
-          do
-            URL=$(echo $PKG_URL | cut -d' ' -f1)
-            PKG=$(echo $PKG_URL | cut -d' ' -f2)
-            mkdir -p "node_modules/$PKG"
-            curl -sL "$URL" | tar -xz --strip-components=1 -C "node_modules/$PKG"
-          done
-
-          # lightningcss loads via relative path inside the pnpm virtual store
-          LCSS=$(find node_modules/.pnpm -maxdepth 4 -type d -name "lightningcss" 2>/dev/null \
-                   | grep "lightningcss@1.32.0" | head -1)
-          if [ -n "$LCSS" ]; then
-            curl -sL https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.32.0.tgz \
-              | tar -Oxz package/lightningcss.darwin-arm64.node > "$LCSS/lightningcss.darwin-arm64.node"
-          fi
+          set -e
+          rm -rf node_modules
+          rm -rf artifacts/outfit-generator/node_modules
+          pnpm install --frozen-lockfile --force
+          pnpm exec rollup --version
 
       - name: Build web app
-        script: pnpm --filter @workspace/outfit-generator run build
+        script: pnpm --filter @workspace/outfit-generator build
 
       - name: Sync Capacitor iOS
         script: |
