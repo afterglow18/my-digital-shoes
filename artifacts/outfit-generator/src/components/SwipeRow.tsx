@@ -336,7 +336,7 @@ export const SwipeRow = forwardRef<SwipeRowHandle, SwipeRowProps>(
                   ) : (
                     <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <span style={{ fontSize: "1.2rem", opacity: 0.26 }}>
-                        {addLabel.toLowerCase().includes("top") ? "👚" : addLabel.toLowerCase().includes("bottom") ? "👖" : "👟"}
+                        <span style={{ filter: "brightness(0) invert(1)" }}>{addLabel.toLowerCase().includes("top") ? "👚" : addLabel.toLowerCase().includes("bottom") ? "👖" : "👟"}</span>
                       </span>
                     </div>
                   )}
