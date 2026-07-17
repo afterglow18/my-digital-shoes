@@ -269,7 +269,7 @@ export default function WardrobePage() {
                   boxShadow: totalItems >= FREE_ITEM_LIMIT
                     ? "0 0 0 1.5px rgba(200,40,40,0.45)"
                     : "0 0 0 1.5px rgba(92,15,30,0.35)",
-                  color: totalItems >= FREE_ITEM_LIMIT ? "#c02020" : "#5C0F1E",
+                  color: totalItems >= FREE_ITEM_LIMIT ? "#ff6b6b" : "#ffffff",
                   fontWeight: 700, fontSize: 9,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   whiteSpace: "nowrap", cursor: "pointer",
