@@ -18,8 +18,8 @@ workflows:
     scripts:
       - name: Install pnpm
         script: |
-          corepack enable
-          corepack prepare pnpm@10.28.2 --activate
+          corepack disable
+          npm install -g pnpm@10.28.2 --force
 
       - name: Install dependencies
         script: |
