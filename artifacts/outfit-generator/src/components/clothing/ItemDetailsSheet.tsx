@@ -62,7 +62,7 @@ function SelectField({
                      text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
         >
           {options.map((o) => (
-            <option key={o} value={o}>{CATEGORY_LABELS[o] ?? o || `— ${label} —`}</option>
+            <option key={o} value={o}>{CATEGORY_LABELS[o] ?? (o || `— ${label} —`)}</option>
           ))}
         </select>
         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-black/40" />
