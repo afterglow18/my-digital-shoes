@@ -78,6 +78,13 @@ const pY = (ir: ImgRect, f: number) => ir.top    + ir.height * f;
 type RowKey = "heels" | "sneakers" | "boots" | "sandals-flats";
 type Phase  = "idle" | "spinning" | "result";
 
+const ROW_LABELS: Record<RowKey, string> = {
+  "heels":         "HEELS",
+  "sneakers":      "SNEAKERS",
+  "boots":         "BOOTS",
+  "sandals-flats": "SANDALS + FLATS",
+};
+
 const ROWS: { key: RowKey }[] = [
   { key: "heels"              },
   { key: "sneakers"      },
@@ -299,7 +306,7 @@ export default function GeneratePage() {
                       color: "#ffffff",
                       fontFamily: "var(--font-display)", textTransform: "uppercase",
                       textShadow: "0 1px 3px rgba(255,255,255,0.15)",
-                    }}>{key.toUpperCase()}</span>
+                    }}>{ROW_LABELS[key]}</span>
                   </div>
 
                   {/* Carousel or empty placeholder — same height every row */}
