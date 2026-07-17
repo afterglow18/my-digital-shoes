@@ -257,30 +257,6 @@ export default function GeneratePage() {
       />
 
 
-      {ready && (
-        <div
-          style={{
-            position: "absolute",
-            top: `calc(env(safe-area-inset-top) + 6px)`,
-            left: 0, right: 0,
-            textAlign: "center",
-            zIndex: 20,
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        >
-          <span style={{
-            fontFamily: "'Great Vibes', cursive",
-            fontSize: Math.min(pH(ir, 0.030), pW(ir, 0.042)),
-            color: "#ffffff",
-            textShadow: "0 1px 4px rgba(255,255,255,0.3)",
-            lineHeight: 1,
-          }}>
-            My Digital Shoes
-          </span>
-        </div>
-      )}
-
       {ready && (() => {
         return (
           <>
