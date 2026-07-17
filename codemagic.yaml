@@ -24,6 +24,12 @@ workflows:
       - name: Install dependencies
         script: pnpm install --no-frozen-lockfile --force
 
+      - name: Install macOS native binaries
+        script: |
+          mkdir -p node_modules/@rollup/rollup-darwin-arm64
+          curl -sL https://registry.npmjs.org/@rollup/rollup-darwin-arm64/-/rollup-darwin-arm64-4.62.2.tgz \
+            | tar -xz --strip-components=1 -C node_modules/@rollup/rollup-darwin-arm64
+
       - name: Build web app
         script: pnpm --filter @workspace/outfit-generator run build
 
