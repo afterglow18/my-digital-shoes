@@ -318,13 +318,13 @@ export default function WardrobePage() {
                   </span>
                 </button>
 
-                {/* Carousel — starts immediately below heading, same height every row */}
+                {/* Carousel — starts below heading; heels also shift down by nudge */}
                 {items.length > 0 && (
                   <div
                     data-testid={`row-${key}`}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH, left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
                       width: carW, height: consistentPhotoH,
                       zIndex: 10, overflow: "visible",
                     }}
@@ -346,7 +346,7 @@ export default function WardrobePage() {
                     aria-label={btnLabel}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH, left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
                       width: carW, height: secH - labelH,
                       zIndex: 22, background: "transparent", border: "none", cursor: "pointer",
                     }}
