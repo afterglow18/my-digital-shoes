@@ -225,6 +225,17 @@ export default function WardrobePage() {
           zIndex: 0,
         }}
       />
+      {/* Black bar — covers the TestFlight / native nav-bar area at the top */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: "calc(env(safe-area-inset-top) + 50px)",
+        background: "#000",
+        zIndex: 2,
+        pointerEvents: "none",
+      }} />
 
 
       {ready && (
