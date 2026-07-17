@@ -37,9 +37,9 @@ const LM = {
   doorR: 0.94,
   rows: [
     { sectionTop: 0.07, shelfY: 0.24 },
-    { sectionTop: 0.27, shelfY: 0.45 },
-    { sectionTop: 0.455, shelfY: 0.635 },
-    { sectionTop: 0.67, shelfY: 0.85 },
+    { sectionTop: 0.24, shelfY: 0.42 },
+    { sectionTop: 0.425, shelfY: 0.605 },
+    { sectionTop: 0.64, shelfY: 0.82 },
   ],
   barY:   0.85,
   barBot: 1.00,
