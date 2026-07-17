@@ -25,9 +25,7 @@ workflows:
         script: pnpm install --no-frozen-lockfile
 
       - name: Install macOS native binaries
-        script: |
-          cd artifacts/outfit-generator
-          npm install @rollup/rollup-darwin-arm64 --no-save --ignore-scripts
+        script: npm install @rollup/rollup-darwin-arm64 --no-save
 
       - name: Build web app
         script: pnpm --filter @workspace/outfit-generator run build
