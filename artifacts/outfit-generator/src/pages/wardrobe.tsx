@@ -231,7 +231,7 @@ export default function WardrobePage() {
         top: -500,
         left: 0,
         right: 0,
-        height: ready ? pY(ir, LM.rows[0].sectionTop) + 500 : 620,
+        height: ready ? pY(ir, 0.07) + 500 : 620,
         background: "#000",
         zIndex: 50,
         pointerEvents: "none",
