@@ -51,7 +51,7 @@ const LM = {
   doorL: 0.12,
   doorR: 0.88,
   rows: [
-    { sectionTop: 0.13, shelfY: 0.24 },
+    { sectionTop: 0.07, shelfY: 0.24 },
     { sectionTop: 0.24, shelfY: 0.42 },
     { sectionTop: 0.437, shelfY: 0.617 },
     { sectionTop: 0.675, shelfY: 0.855 },
