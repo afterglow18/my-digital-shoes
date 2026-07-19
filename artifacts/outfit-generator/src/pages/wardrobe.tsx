@@ -51,7 +51,7 @@ const LM = {
   doorL: 0.12,
   doorR: 0.88,
   rows: [
-    { sectionTop: 0.07, shelfY: 0.24 },
+    { sectionTop: 0.13, shelfY: 0.24 },
     { sectionTop: 0.24, shelfY: 0.42 },
     { sectionTop: 0.437, shelfY: 0.617 },
     { sectionTop: 0.675, shelfY: 0.855 },
@@ -276,11 +276,6 @@ export default function WardrobePage() {
             const items = rowData[key];
             const secTop = pY(ir, lm.sectionTop);
             const secH   = pH(ir, lm.shelfY - lm.sectionTop);
-            const labelNudge = rowIdx === 0 ? pH(ir, 0.015)
-                             : rowIdx === 2 ? pH(ir, 0.030)
-                             : rowIdx === 1 ? pH(ir, 0.026)
-                             : 0;
-
             return (
               <React.Fragment key={key}>
                 {/* Heading — anchored to top of section, tappable to add */}
@@ -289,9 +284,7 @@ export default function WardrobePage() {
                   aria-label={btnLabel}
                   data-testid={`add-btn-${key}`}
                   style={{
-                    position: "absolute",
-                    top: secTop + labelNudge,
-                    left: carLeft,
+                    position: "absolute", top: secTop, left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 24, background: "none", border: "none", cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
@@ -308,13 +301,13 @@ export default function WardrobePage() {
                   </span>
                 </button>
 
-                {/* Carousel — starts below heading; heels also shift down by nudge */}
+                {/* Carousel — starts immediately below heading, same height every row */}
                 {items.length > 0 && (
                   <div
                     data-testid={`row-${key}`}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
+                      top: secTop + labelH, left: carLeft,
                       width: carW, height: consistentPhotoH,
                       zIndex: 10, overflow: "visible",
                     }}
@@ -336,7 +329,7 @@ export default function WardrobePage() {
                     aria-label={btnLabel}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
+                      top: secTop + labelH, left: carLeft,
                       width: carW, height: secH - labelH,
                       zIndex: 22, background: "transparent", border: "none", cursor: "pointer",
                     }}
