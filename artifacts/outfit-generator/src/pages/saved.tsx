@@ -156,7 +156,7 @@ export default function SavedPage() {
   };
 
   return (
-    <div className="min-h-full flex flex-col px-4 pb-8 bg-secondary/10 relative" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}>
+    <div className="min-h-full flex flex-col pt-8 px-4 pb-8 bg-secondary/10 relative">
       <header className="mb-6">
         <h1 className="text-4xl font-display font-bold uppercase tracking-tighter mb-1">Lookbook</h1>
         <div className="flex items-center justify-between">

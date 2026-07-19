@@ -33,7 +33,7 @@ const ROWS: { key: RowKey; btnLabel: string }[] = [
   { key: "heels",         btnLabel: "+ ADD HEELS"          },
   { key: "sneakers",      btnLabel: "+ ADD SNEAKERS"        },
   { key: "boots",         btnLabel: "+ ADD BOOTS"           },
-  { key: "sandals-flats", btnLabel: "+ SANDALS & FLATS" },
+  { key: "sandals-flats", btnLabel: "+ ADD SANDALS + FLATS" },
 ];
 
 // ── Image constants ───────────────────────────────────────────────────────────
