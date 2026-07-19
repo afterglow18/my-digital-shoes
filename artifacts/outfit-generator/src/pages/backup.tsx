@@ -160,7 +160,7 @@ export default function AccountPage() {
       style={{ background: '#F5F0E8' }}
     >
       {/* Page title */}
-      <div className="px-5 pt-8 pb-5">
+      <div className="px-5 pb-5" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}>
         <h1
           className="font-black uppercase leading-none"
           style={{ fontSize: 32, letterSpacing: '-0.02em' }}

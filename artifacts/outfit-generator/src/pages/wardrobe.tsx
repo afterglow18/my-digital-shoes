@@ -33,7 +33,7 @@ const ROWS: { key: RowKey; btnLabel: string }[] = [
   { key: "heels",         btnLabel: "+ ADD HEELS"          },
   { key: "sneakers",      btnLabel: "+ ADD SNEAKERS"        },
   { key: "boots",         btnLabel: "+ ADD BOOTS"           },
-  { key: "sandals-flats", btnLabel: "+ ADD SANDALS + FLATS" },
+  { key: "sandals-flats", btnLabel: "+ SANDALS & FLATS" },
 ];
 
 // ── Image constants ───────────────────────────────────────────────────────────
@@ -225,6 +225,17 @@ export default function WardrobePage() {
           zIndex: 0,
         }}
       />
+      {/* Black bar — extends far above screen top, down to the first section, in front of everything */}
+      <div style={{
+        position: "absolute",
+        top: -500,
+        left: 0,
+        right: 0,
+        height: ready ? pY(ir, LM.rows[0].sectionTop) + 500 : 620,
+        background: "#000",
+        zIndex: 50,
+        pointerEvents: "none",
+      }} />
 
 
       {ready && (

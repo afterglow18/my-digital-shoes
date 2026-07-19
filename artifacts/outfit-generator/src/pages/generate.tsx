@@ -255,6 +255,17 @@ export default function GeneratePage() {
           zIndex: 0,
         }}
       />
+      {/* Black bar — extends far above screen top, down to the first section, in front of everything */}
+      <div style={{
+        position: "absolute",
+        top: -500,
+        left: 0,
+        right: 0,
+        height: ready ? pY(ir, LM.rows[0].sectionTop) + 500 : 620,
+        background: "#000",
+        zIndex: 50,
+        pointerEvents: "none",
+      }} />
 
 
       {ready && (() => {
@@ -266,14 +277,16 @@ export default function GeneratePage() {
               const items = { "heels": totes, "sneakers": shoulderBags, "boots": crossbodyBags, "sandals-flats": clutchesWristlets }[key];
               const secTop = pY(ir, lm.sectionTop);
               const secH   = pH(ir, lm.shelfY - lm.sectionTop);
-              const labelNudge = rowIdx === 0 ? pH(ir, 0.015) : 0;
+              const labelNudge = rowIdx === 0 ? pH(ir, 0.015)
+                               : rowIdx === 2 ? pH(ir, 0.030)
+                               : rowIdx === 1 ? pH(ir, 0.026)
+                               : 0;
+
               return (
                 <React.Fragment key={key}>
                   {/* Heading — anchored to top of section */}
                   <div style={{
-                    position: "absolute",
-                    top: rowIdx === 0 ? secTop + labelNudge : secTop - labelH / 2,
-                    left: carLeft,
+                    position: "absolute", top: secTop + labelNudge, left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 12, display: "flex", alignItems: "center", justifyContent: "center",
                     pointerEvents: "none",
@@ -291,7 +304,7 @@ export default function GeneratePage() {
                   {items.length > 0 ? (
                     <div style={{
                       position: "absolute",
-                         top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
                       width: carW, height: consistentPhotoH,
                       zIndex: 10, overflow: "visible",
                     }}>
