@@ -276,11 +276,7 @@ export default function WardrobePage() {
             const items = rowData[key];
             const secTop = pY(ir, lm.sectionTop);
             const secH   = pH(ir, lm.shelfY - lm.sectionTop);
-            const headingLift = pH(ir, 0.012);
-            const labelNudge = rowIdx === 0 ? pH(ir, 0.015)
-                             : rowIdx === 2 ? pH(ir, 0.030)
-                             : rowIdx === 1 ? pH(ir, 0.026)
-                             : 0;
+            const labelNudge = rowIdx === 0 ? pH(ir, 0.015) : 0;
 
             return (
               <React.Fragment key={key}>
@@ -290,7 +286,9 @@ export default function WardrobePage() {
                   aria-label={btnLabel}
                   data-testid={`add-btn-${key}`}
                   style={{
-                    position: "absolute", top: secTop + labelNudge - headingLift, left: carLeft,
+                    position: "absolute",
+                    top: rowIdx === 0 ? secTop + labelNudge : secTop - labelH / 2,
+                    left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 24, background: "none", border: "none", cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
