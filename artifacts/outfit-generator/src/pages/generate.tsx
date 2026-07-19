@@ -36,7 +36,7 @@ const LM = {
   doorL: 0.06,
   doorR: 0.94,
   rows: [
-    { sectionTop: 0.07, shelfY: 0.24 },
+    { sectionTop: 0.13, shelfY: 0.24 },
     { sectionTop: 0.24, shelfY: 0.42 },
     { sectionTop: 0.437, shelfY: 0.617 },
     { sectionTop: 0.675, shelfY: 0.855 },
@@ -277,16 +277,11 @@ export default function GeneratePage() {
               const items = { "heels": totes, "sneakers": shoulderBags, "boots": crossbodyBags, "sandals-flats": clutchesWristlets }[key];
               const secTop = pY(ir, lm.sectionTop);
               const secH   = pH(ir, lm.shelfY - lm.sectionTop);
-              const labelNudge = rowIdx === 0 ? pH(ir, 0.015)
-                               : rowIdx === 2 ? pH(ir, 0.030)
-                               : rowIdx === 1 ? pH(ir, 0.026)
-                               : 0;
-
               return (
                 <React.Fragment key={key}>
                   {/* Heading — anchored to top of section */}
                   <div style={{
-                    position: "absolute", top: secTop + labelNudge, left: carLeft,
+                    position: "absolute", top: secTop, left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 12, display: "flex", alignItems: "center", justifyContent: "center",
                     pointerEvents: "none",
@@ -304,7 +299,7 @@ export default function GeneratePage() {
                   {items.length > 0 ? (
                     <div style={{
                       position: "absolute",
-                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
+                      top: secTop + labelH, left: carLeft,
                       width: carW, height: consistentPhotoH,
                       zIndex: 10, overflow: "visible",
                     }}>
@@ -319,7 +314,7 @@ export default function GeneratePage() {
                   ) : (
                     <div style={{
                       position: "absolute",
-                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
+                      top: secTop + labelH, left: carLeft,
                       width: carW, height: secH - labelH,
                       zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
