@@ -43,6 +43,11 @@ workflows:
           cd artifacts/outfit-generator
           npx cap sync ios
 
+      - name: Stamp display name
+        script: |
+          PLIST="$CM_BUILD_DIR/artifacts/outfit-generator/ios/App/App/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'My Shoes'" "$PLIST"
+
       - name: Set build number
         script: |
           cd artifacts/outfit-generator/ios/App
