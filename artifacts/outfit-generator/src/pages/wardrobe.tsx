@@ -33,7 +33,7 @@ const ROWS: { key: RowKey; btnLabel: string }[] = [
   { key: "heels",         btnLabel: "+ ADD HEELS"          },
   { key: "sneakers",      btnLabel: "+ ADD SNEAKERS"        },
   { key: "boots",         btnLabel: "+ ADD BOOTS"           },
-  { key: "sandals-flats", btnLabel: "+ SANDALS & FLATS" },
+  { key: "sandals-flats", btnLabel: "+ ADD SANDALS + FLATS" },
 ];
 
 // ── Image constants ───────────────────────────────────────────────────────────
@@ -225,17 +225,6 @@ export default function WardrobePage() {
           zIndex: 0,
         }}
       />
-      {/* Black bar — extends far above screen top, down to the first section, in front of everything */}
-      <div style={{
-        position: "absolute",
-        top: -500,
-        left: 0,
-        right: 0,
-        height: ready ? pY(ir, LM.rows[0].sectionTop) + 500 : 620,
-        background: "#000",
-        zIndex: 50,
-        pointerEvents: "none",
-      }} />
 
 
       {ready && (
@@ -276,7 +265,10 @@ export default function WardrobePage() {
             const items = rowData[key];
             const secTop = pY(ir, lm.sectionTop);
             const secH   = pH(ir, lm.shelfY - lm.sectionTop);
-            const labelNudge = rowIdx === 0 ? pH(ir, 0.015) : 0;
+            const labelNudge = rowIdx === 0 ? pH(ir, 0.015)
+                             : rowIdx === 2 ? pH(ir, 0.030)
+                             : rowIdx === 1 ? pH(ir, 0.026)
+                             : 0;
 
             return (
               <React.Fragment key={key}>
@@ -286,9 +278,7 @@ export default function WardrobePage() {
                   aria-label={btnLabel}
                   data-testid={`add-btn-${key}`}
                   style={{
-                    position: "absolute",
-                    top: rowIdx === 0 ? secTop + labelNudge : secTop - labelH / 2,
-                    left: carLeft,
+                    position: "absolute", top: secTop + labelNudge, left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 24, background: "none", border: "none", cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
