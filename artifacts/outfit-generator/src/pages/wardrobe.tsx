@@ -225,17 +225,6 @@ export default function WardrobePage() {
           zIndex: 0,
         }}
       />
-      {/* Black bar — extends far above screen top, down to the first section, in front of everything */}
-      <div style={{
-        position: "absolute",
-        top: -500,
-        left: 0,
-        right: 0,
-        height: ready ? pY(ir, 0.07) + 500 : 620,
-        background: "#000",
-        zIndex: 50,
-        pointerEvents: "none",
-      }} />
 
 
       {ready && (
