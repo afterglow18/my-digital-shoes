@@ -48,14 +48,20 @@ function Router() {
 
 function AppShell() {
   const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
-  const [entered, setEntered] = useState<boolean>(() => isPreview);
+  const [entered, setEntered] = useState<boolean>(
+    () => isPreview || localStorage.getItem('mds_entered') === '1'
+  );
+  const handleEnter = () => {
+    localStorage.setItem('mds_entered', '1');
+    setEntered(true);
+  };
   const { enabled, isLocked, authenticate, enableLock, disableLock } = useBiometricLock();
 
   return (
     <BiometricLockContext.Provider value={{ enabled, enableLock, disableLock }}>
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <Router />
-        {!entered && <WelcomePage onEnter={() => setEntered(true)} />}
+        {!entered && <WelcomePage onEnter={handleEnter} />}
       </WouterRouter>
 
       {/* Biometric lock gate — sits above everything including the welcome splash */}
