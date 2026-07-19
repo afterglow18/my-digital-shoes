@@ -3,3 +3,4 @@
 - [Stripe integration](stripe-integration.md) — credential field name fix, checkout flow design, stripe-replit-sync warning, product seeding.
 - [Auth system](auth-system.md) — JWT/bcrypt auth, no-fallback-secret rule, ownership-before-delete pattern, single useAuth instance via context.
 - [Local-first migration](local-first-migration.md) — IndexedDB replaces API server; all IDs are UUID strings; purchase() stubs RevenueCat.
+- [Cursive header location](cursive-header.md) — Great Vibes header hidden in ready blocks in wardrobe.tsx + generate.tsx; hard to find.
