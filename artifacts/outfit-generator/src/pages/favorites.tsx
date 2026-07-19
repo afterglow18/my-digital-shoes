@@ -147,7 +147,7 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="min-h-full flex flex-col pt-8 px-4 pb-8 bg-secondary/10">
+    <div className="min-h-full flex flex-col px-4 pb-8 bg-secondary/10" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}>
       <header className="mb-5">
         <h1 className="text-4xl font-display font-bold uppercase tracking-tighter mb-1">
           My Faves ♥️
