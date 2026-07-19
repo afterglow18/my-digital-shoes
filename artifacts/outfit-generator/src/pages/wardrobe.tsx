@@ -265,6 +265,8 @@ export default function WardrobePage() {
             const items = rowData[key];
             const secTop = pY(ir, lm.sectionTop);
             const secH   = pH(ir, lm.shelfY - lm.sectionTop);
+            const labelNudge = rowIdx === 0 ? pH(ir, 0.015) : 0;
+
             return (
               <React.Fragment key={key}>
                 {/* Heading — anchored to top of section, tappable to add */}
@@ -273,7 +275,9 @@ export default function WardrobePage() {
                   aria-label={btnLabel}
                   data-testid={`add-btn-${key}`}
                   style={{
-                    position: "absolute", top: secTop, left: carLeft,
+                    position: "absolute",
+                    top: rowIdx === 0 ? secTop + labelNudge : secTop - labelH / 2,
+                    left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 24, background: "none", border: "none", cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
@@ -290,13 +294,13 @@ export default function WardrobePage() {
                   </span>
                 </button>
 
-                {/* Carousel — starts immediately below heading, same height every row */}
+                {/* Carousel — starts below heading; heels also shift down by nudge */}
                 {items.length > 0 && (
                   <div
                     data-testid={`row-${key}`}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH, left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
                       width: carW, height: consistentPhotoH,
                       zIndex: 10, overflow: "visible",
                     }}
@@ -318,7 +322,7 @@ export default function WardrobePage() {
                     aria-label={btnLabel}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH, left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
                       width: carW, height: secH - labelH,
                       zIndex: 22, background: "transparent", border: "none", cursor: "pointer",
                     }}
