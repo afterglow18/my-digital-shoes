@@ -369,10 +369,12 @@ export default function GeneratePage() {
               </div>
             )}
 
-            {/* Action bar background */}
+            {/* Action bar background — height matches the Spin It button (52px) + 4px breathing room */}
             <div aria-hidden="true" style={{
-              position: "absolute", top: pY(ir, LM.barY), left: 0, width: "100%",
-              height: pH(ir, LM.barBot - LM.barY), zIndex: 18, pointerEvents: "none",
+              position: "absolute",
+              top: pY(ir, LM.barY) + pH(ir, LM.barBot - LM.barY) / 2 - 28,
+              left: 0, width: "100%",
+              height: 56, zIndex: 18, pointerEvents: "none",
               background: "rgba(255,255,255,0.97)", borderTop: "1px solid rgba(0,0,0,0.08)",
             }} />
 
