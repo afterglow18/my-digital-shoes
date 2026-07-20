@@ -9,18 +9,19 @@ import BackupPage from './pages/backup';
 import WelcomePage from './pages/welcome';
 import { LockedScreen } from './components/LockedScreen';
 import { queryClient } from '@/lib/queryClient';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { initRevenueCat } from '@/lib/revenuecat';
+import { recheckEntitlement } from '@/hooks/useEntitlements';
 import { useBiometricLock } from '@/hooks/useBiometricLock';
 import { BiometricLockContext } from '@/contexts/BiometricLockContext';
 import { AnimatePresence } from 'framer-motion';
 
-// Initialise RevenueCat as early as possible
-try {
-  initRevenueCat();
-} catch (e) {
-  console.error('[RevenueCat] Init failed:', e);
-}
+// Initialise RevenueCat, then immediately verify the entitlement from RC.
+// This ensures the cached localStorage tier is corrected on every cold launch
+// (e.g. refunds, expirations that happened while the app was closed).
+initRevenueCat()
+  .then(() => recheckEntitlement())
+  .catch((e) => console.error('[RevenueCat] Init/recheck failed:', e));
 
 function NotFound() {
   return (
@@ -50,6 +51,21 @@ function AppShell() {
   const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
   const [entered, setEntered] = useState<boolean>(() => isPreview);
   const { enabled, isLocked, authenticate, enableLock, disableLock } = useBiometricLock();
+
+  // Recheck the RevenueCat entitlement every time the app returns to the
+  // foreground. This removes premium access automatically if a subscription
+  // expires or a purchase is refunded while the app is backgrounded.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        recheckEntitlement().catch((e) =>
+          console.warn('[RevenueCat] Foreground recheck failed:', e),
+        );
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   return (
     <BiometricLockContext.Provider value={{ enabled, enableLock, disableLock }}>

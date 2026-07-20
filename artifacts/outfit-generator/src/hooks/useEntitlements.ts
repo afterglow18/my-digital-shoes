@@ -1,8 +1,12 @@
 /**
  * useEntitlements — entitlement hook backed by RevenueCat.
  *
- * Tier is persisted in localStorage as a fast-read cache and kept in sync
- * after every purchase / restore.  The authoritative source is RevenueCat.
+ * The authoritative source is always RevenueCat CustomerInfo.
+ * localStorage is used only as a fast initial render cache — it is
+ * overwritten by the first real RC check on launch / foreground.
+ *
+ * Access is revoked automatically when RC reports the entitlement
+ * is no longer active (refund, expiry, etc.).
  */
 
 import { useCallback, useSyncExternalStore } from 'react';
@@ -13,6 +17,7 @@ import {
   ENTITLEMENT_ID,
   PRODUCT_TIER_MAP,
   getPackageForProduct,
+  syncTierFromRevenueCat,
   restoreAndCheck,
 } from '@/lib/revenuecat';
 
@@ -51,14 +56,34 @@ function getTierSnapshot(): Tier {
   return _currentTier;
 }
 
-/** Promote the tier globally and persist. Called after a successful purchase. */
+/**
+ * Update the global tier and persist to localStorage.
+ * Can promote OR demote (e.g. back to 'free' on refund/expiry).
+ */
 export function setGlobalTier(t: Tier, product?: PurchaseProduct): void {
   try {
     localStorage.setItem(STORAGE_KEY, t);
     if (product) localStorage.setItem(STORAGE_PRODUCT_KEY, product);
+    // Clear product key when downgrading to free
+    if (t === 'free') localStorage.removeItem(STORAGE_PRODUCT_KEY);
   } catch {}
   _currentTier = t;
   _subscribers.forEach((fn) => fn());
+}
+
+/**
+ * Ask RevenueCat for the current CustomerInfo and sync the global tier.
+ * Safe to call at any time — if RC is unavailable (network error, not yet
+ * configured) it returns early without changing the tier.
+ *
+ * Call this on: app launch (after init), foreground resume, after purchase,
+ * and after restore.
+ */
+export async function recheckEntitlement(): Promise<void> {
+  const tier = await syncTierFromRevenueCat();
+  if (tier !== null) {
+    setGlobalTier(tier);
+  }
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -94,15 +119,17 @@ export function useEntitlements() {
 
         const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
 
+        // Always trust CustomerInfo returned by the SDK — never just assume success.
         if (ENTITLEMENT_ID in (customerInfo.entitlements?.active ?? {})) {
           const newTier: Tier = PRODUCT_TIER_MAP[product] ?? PRODUCT_TIER[product] ?? 'unlock';
           setGlobalTier(newTier, product);
           return 'success';
         }
 
+        // Purchase flow completed but entitlement not active — recheck to be sure.
+        await recheckEntitlement();
         return 'cancelled';
       } catch (err: any) {
-        // userCancelled is thrown as an error by the SDK
         if (err?.code === 'PURCHASE_CANCELLED' || err?.userCancelled === true) {
           return 'cancelled';
         }
@@ -115,12 +142,11 @@ export function useEntitlements() {
 
   const restore = useCallback(async (): Promise<PurchaseResult> => {
     try {
-      const active = await restoreAndCheck();
-      if (active) {
-        setGlobalTier('unlock');
-        return 'success';
-      }
-      return 'cancelled';
+      const tier = await restoreAndCheck();
+      if (tier === null) return 'unavailable'; // RC error
+      // Apply whatever RC says — this also handles revocations.
+      setGlobalTier(tier);
+      return tier !== 'free' ? 'success' : 'cancelled';
     } catch (err) {
       console.error('[RevenueCat] Restore error:', err);
       return 'unavailable';
