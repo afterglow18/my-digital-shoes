@@ -266,7 +266,7 @@ export default function GeneratePage() {
               const items = { "heels": totes, "sneakers": shoulderBags, "boots": crossbodyBags, "sandals-flats": clutchesWristlets }[key];
               const secTop = pY(ir, lm.sectionTop);
               const secH   = pH(ir, lm.shelfY - lm.sectionTop);
-              const labelNudge = rowIdx === 0 ? pH(ir, 0.003) : 0;
+              const labelNudge = rowIdx === 0 ? -pH(ir, 0.003) : 0;
 
               return (
                 <React.Fragment key={key}>
