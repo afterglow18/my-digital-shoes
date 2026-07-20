@@ -273,7 +273,7 @@ export default function GeneratePage() {
                   {/* Heading — anchored to top of section */}
                   <div style={{
                     position: "absolute",
-                    top: rowIdx === 0 ? secTop + labelNudge : rowIdx === 3 ? secTop : secTop - labelH / 2,
+                    top: rowIdx === 0 ? secTop + labelNudge : rowIdx === 3 ? secTop : pY(ir, LM.rows[rowIdx - 1].shelfY) - labelH / 2,
                     left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 12, display: "flex", alignItems: "center", justifyContent: "center",
