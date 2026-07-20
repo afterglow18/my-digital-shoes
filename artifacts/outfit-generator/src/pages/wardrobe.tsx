@@ -300,7 +300,7 @@ export default function WardrobePage() {
                     data-testid={`row-${key}`}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0) + (rowIdx === 1 || rowIdx === 2 ? pH(ir, 0.02) : 0), left: carLeft,
                       width: carW, height: consistentPhotoH,
                       zIndex: 10, overflow: "visible",
                     }}
@@ -322,7 +322,7 @@ export default function WardrobePage() {
                     aria-label={btnLabel}
                     style={{
                       position: "absolute",
-                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0), left: carLeft,
+                      top: secTop + labelH + (rowIdx === 0 ? labelNudge : 0) + (rowIdx === 1 || rowIdx === 2 ? pH(ir, 0.02) : 0), left: carLeft,
                       width: carW, height: secH - labelH,
                       zIndex: 22, background: "transparent", border: "none", cursor: "pointer",
                     }}
