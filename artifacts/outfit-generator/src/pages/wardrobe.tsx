@@ -276,7 +276,7 @@ export default function WardrobePage() {
                   data-testid={`add-btn-${key}`}
                   style={{
                     position: "absolute",
-                    top: rowIdx === 0 ? secTop + labelNudge : rowIdx === 3 ? secTop : pY(ir, LM.rows[rowIdx - 1].shelfY),
+                    top: rowIdx === 0 ? secTop + labelNudge : secTop,
                     left: carLeft,
                     width: carW, height: labelH,
                     zIndex: 24, background: "none", border: "none", cursor: "pointer",
