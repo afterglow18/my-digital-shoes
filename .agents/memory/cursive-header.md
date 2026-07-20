@@ -45,9 +45,11 @@ maxPhotoH: rowIdx === 3 ? consistentPhotoH - pH(ir, 0.012) : consistentPhotoH
 
 ## Generate page — Spin It white bar
 
-Shrunk from full `barY→barBot` height to 56px centered in the same zone:
+Top is aligned to the button top (centered in the barY→barBot zone minus 28px). Height is a fixed 300px overshoot — the container's `overflow: hidden` clips it flush to the bottom. Do NOT use `bottom: 0` (leaves a black gap on iOS); do NOT use a small height (floats mid-screen).
+
 ```
 top: pY(ir, LM.barY) + pH(ir, LM.barBot - LM.barY) / 2 - 28
-height: 56
+left: 0, right: 0, height: 300
 ```
-Button is 52px tall; bar gives 2px breathing room each side.
+
+**Why:** container is `calc(100dvh - 90px)` with `overflow: hidden` + `transform: translateZ(0)`. `bottom: 0` doesn't fill all the way on iOS due to safe-area gaps; overshooting with a large height and letting the container clip it is the reliable fix.
