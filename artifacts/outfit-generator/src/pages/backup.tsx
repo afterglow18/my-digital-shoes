@@ -90,7 +90,7 @@ export default function AccountPage() {
     setRestoring(false);
     if (result === 'success') {
       alert('✅ Purchases restored!');
-    } else if (result === 'unavailable') {
+    } else if (result !== 'cancelled') {
       alert('No previous purchases found.');
     }
   }, [restore, restoring]);

@@ -88,7 +88,10 @@ export async function recheckEntitlement(): Promise<void> {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type PurchaseResult = 'success' | 'cancelled' | 'unavailable';
+export type PurchaseResult =
+  | 'success'
+  | 'cancelled'
+  | { result: 'unavailable'; detail: string };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
@@ -113,8 +116,9 @@ export function useEntitlements() {
       try {
         const pkg = await getPackageForProduct(product);
         if (!pkg) {
-          console.warn('[RevenueCat] Package not found for product:', product);
-          return 'unavailable';
+          const detail = 'No package found for this product in the current RC offering.';
+          console.warn('[RevenueCat]', detail);
+          return { result: 'unavailable', detail };
         }
 
         const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
@@ -133,8 +137,9 @@ export function useEntitlements() {
         if (err?.code === 'PURCHASE_CANCELLED' || err?.userCancelled === true) {
           return 'cancelled';
         }
+        const detail = err?.message ?? err?.code ?? JSON.stringify(err) ?? 'Unknown error';
         console.error('[RevenueCat] Purchase error:', err);
-        return 'unavailable';
+        return { result: 'unavailable', detail };
       }
     },
     [],
@@ -143,13 +148,13 @@ export function useEntitlements() {
   const restore = useCallback(async (): Promise<PurchaseResult> => {
     try {
       const tier = await restoreAndCheck();
-      if (tier === null) return 'unavailable'; // RC error
+      if (tier === null) return { result: 'unavailable', detail: 'RC restore call failed — check connection.' };
       // Apply whatever RC says — this also handles revocations.
       setGlobalTier(tier);
       return tier !== 'free' ? 'success' : 'cancelled';
-    } catch (err) {
+    } catch (err: any) {
       console.error('[RevenueCat] Restore error:', err);
-      return 'unavailable';
+      return { result: 'unavailable', detail: err?.message ?? err?.code ?? JSON.stringify(err) ?? 'Unknown error' };
     }
   }, []);
 

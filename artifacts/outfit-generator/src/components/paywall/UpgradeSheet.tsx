@@ -89,9 +89,10 @@ export function UpgradeSheet({ onClose }: Props) {
     } else if (result === "cancelled") {
       setStatus("idle");
     } else {
-      // "unavailable" — RC not configured, no offering, or unexpected error
+      // { result: 'unavailable', detail } — show the real RC error on screen
       setStatus("idle");
-      setErrorMsg("Purchase unavailable. Check your connection and try again.");
+      const detail = typeof result === "object" ? result.detail : "Unknown error";
+      setErrorMsg(`Purchase failed: ${detail}`);
     }
   }, [status, purchase, selected, onClose]);
 
