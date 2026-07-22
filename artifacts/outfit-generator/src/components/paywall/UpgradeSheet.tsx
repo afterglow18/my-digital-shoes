@@ -64,15 +64,22 @@ const PLANS: Plan[] = [
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
+const TERMS_URL   = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+const PRIVACY_URL = "https://app.notion.com/p/My-Digital-Collection-Privacy-Policy-39682db6065380b19dedcb108d4a0ef4?source=copy_link";
+
+function openUrl(url: string) {
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export function UpgradeSheet({ onClose }: Props) {
-  const { purchase } = useEntitlements();
+  const { purchase, restore } = useEntitlements();
   const [selected, setSelected] = useState<PurchaseProduct>("lifetime");
-  const [status, setStatus]     = useState<"idle" | "pending">("idle");
+  const [status, setStatus]     = useState<"idle" | "pending" | "restoring">("idle");
 
   const selectedPlan = PLANS.find(p => p.id === selected)!;
 
   const handlePurchase = useCallback(async () => {
-    if (status === "pending") return;
+    if (status !== "idle") return;
     setStatus("pending");
     const result: PurchaseResult = await purchase(selected);
     if (result === "success") {
@@ -81,6 +88,17 @@ export function UpgradeSheet({ onClose }: Props) {
       setStatus("idle");
     }
   }, [status, purchase, selected, onClose]);
+
+  const handleRestore = useCallback(async () => {
+    if (status !== "idle") return;
+    setStatus("restoring");
+    const result = await restore();
+    if (result === "success") {
+      onClose();
+    } else {
+      setStatus("idle");
+    }
+  }, [status, restore, onClose]);
 
   return (
     <motion.div
@@ -225,18 +243,19 @@ export function UpgradeSheet({ onClose }: Props) {
       {/* ── CTA ────────────────────────────────────────────────────────── */}
       <div
         className="px-5 flex flex-col gap-2.5 flex-shrink-0 mt-auto"
-        style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
+        {/* Purchase button */}
         <button
           onClick={handlePurchase}
-          disabled={status === "pending"}
+          disabled={status !== "idle"}
           className="w-full py-4 rounded-xl font-black text-base uppercase tracking-wide
                      text-white transition-all active:translate-y-0.5 active:shadow-none
                      disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
-            background: status === "pending" ? ROSE_DARK : `linear-gradient(to bottom, ${ROSE}, ${ROSE_DARK})`,
+            background: status !== "idle" ? ROSE_DARK : `linear-gradient(to bottom, ${ROSE}, ${ROSE_DARK})`,
             border:     `2.5px solid rgba(255,255,255,0.2)`,
-            boxShadow:  status === "pending" ? "none" : "3px 3px 0 rgba(0,0,0,0.85)",
+            boxShadow:  status !== "idle" ? "none" : "3px 3px 0 rgba(0,0,0,0.85)",
             letterSpacing: "0.04em",
           }}
         >
@@ -249,13 +268,45 @@ export function UpgradeSheet({ onClose }: Props) {
                 : `UNLOCK FOREVER – ${selectedPlan.price} ›`}
         </button>
 
-        <button
-          onClick={onClose}
-          className="text-sm font-bold text-black/35 text-center
-                     underline underline-offset-2 hover:text-black/55 transition-colors"
-        >
-          Maybe Later
-        </button>
+        {/* Restore + Maybe Later row */}
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={handleRestore}
+            disabled={status !== "idle"}
+            className="text-sm font-bold text-black/40 text-center
+                       underline underline-offset-2 active:text-black/60 transition-colors
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {status === "restoring" ? "Restoring…" : "Restore Purchases"}
+          </button>
+          <span className="text-black/20 text-sm select-none">·</span>
+          <button
+            onClick={onClose}
+            className="text-sm font-bold text-black/35 text-center
+                       underline underline-offset-2 active:text-black/55 transition-colors"
+          >
+            Maybe Later
+          </button>
+        </div>
+
+        {/* Legal links */}
+        <div className="flex items-center justify-center gap-3 pb-1">
+          <button
+            onClick={() => openUrl(PRIVACY_URL)}
+            className="text-[10px] font-medium text-black/30 underline underline-offset-2
+                       active:text-black/50 transition-colors"
+          >
+            Privacy Policy
+          </button>
+          <span className="text-black/20 text-[10px] select-none">·</span>
+          <button
+            onClick={() => openUrl(TERMS_URL)}
+            className="text-[10px] font-medium text-black/30 underline underline-offset-2
+                       active:text-black/50 transition-colors"
+          >
+            Terms of Use
+          </button>
+        </div>
       </div>
     </motion.div>
   );
