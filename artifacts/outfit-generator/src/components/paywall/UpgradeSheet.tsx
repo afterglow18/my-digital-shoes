@@ -75,28 +75,39 @@ export function UpgradeSheet({ onClose }: Props) {
   const { purchase, restore } = useEntitlements();
   const [selected, setSelected] = useState<PurchaseProduct>("lifetime");
   const [status, setStatus]     = useState<"idle" | "pending" | "restoring">("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const selectedPlan = PLANS.find(p => p.id === selected)!;
 
   const handlePurchase = useCallback(async () => {
     if (status !== "idle") return;
+    setErrorMsg(null);
     setStatus("pending");
     const result: PurchaseResult = await purchase(selected);
     if (result === "success") {
       onClose();
-    } else {
+    } else if (result === "cancelled") {
       setStatus("idle");
+    } else {
+      // "unavailable" — RC not configured, no offering, or unexpected error
+      setStatus("idle");
+      setErrorMsg("Purchase unavailable. Check your connection and try again.");
     }
   }, [status, purchase, selected, onClose]);
 
   const handleRestore = useCallback(async () => {
     if (status !== "idle") return;
+    setErrorMsg(null);
     setStatus("restoring");
     const result = await restore();
     if (result === "success") {
       onClose();
+    } else if (result === "cancelled") {
+      setStatus("idle");
+      setErrorMsg("No previous purchases found for this Apple ID.");
     } else {
       setStatus("idle");
+      setErrorMsg("Restore failed. Check your connection and try again.");
     }
   }, [status, restore, onClose]);
 
@@ -245,6 +256,13 @@ export function UpgradeSheet({ onClose }: Props) {
         className="px-5 flex flex-col gap-2.5 flex-shrink-0 mt-auto"
         style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
+        {/* Error message */}
+        {errorMsg && (
+          <p className="text-center text-[11px] font-semibold text-red-500 px-2 -mb-1">
+            {errorMsg}
+          </p>
+        )}
+
         {/* Purchase button */}
         <button
           onClick={handlePurchase}

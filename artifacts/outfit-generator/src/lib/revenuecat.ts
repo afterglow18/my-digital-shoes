@@ -38,7 +38,6 @@ let _initialised = false;
  */
 export async function initRevenueCat(): Promise<void> {
   if (_initialised) return;
-  _initialised = true;
 
   // In browser / dev → use test store key; in native iOS → use App Store key.
   const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
@@ -51,9 +50,11 @@ export async function initRevenueCat(): Promise<void> {
 
   try {
     await Purchases.configure({ apiKey });
-    console.log("[RevenueCat] Configured");
+    _initialised = true; // only mark initialised on success
+    console.log("[RevenueCat] Configured — native:", isNative, "key prefix:", apiKey.slice(0, 8));
   } catch (e: unknown) {
     console.error("[RevenueCat] Configure error:", e);
+    // do NOT set _initialised so the next launch attempt can retry
   }
 }
 
@@ -62,13 +63,28 @@ export async function getPackageForProduct(
   product: PurchaseProduct,
 ): Promise<PurchasesPackage | null> {
   const pkgId = PACKAGE_ID[product];
-  const offerings: PurchasesOfferings = await Purchases.getOfferings();
+  let offerings: PurchasesOfferings;
+  try {
+    offerings = await Purchases.getOfferings();
+  } catch (e: unknown) {
+    console.error("[RevenueCat] getOfferings failed — SDK may not be configured:", e);
+    return null;
+  }
   const current = offerings.current;
-  if (!current) return null;
-  return (
-    current.availablePackages.find((p: PurchasesPackage) => p.packageType === pkgId || p.identifier === pkgId) ??
-    null
-  );
+  if (!current) {
+    console.warn("[RevenueCat] No current offering returned. All offerings:", JSON.stringify(offerings));
+    return null;
+  }
+  const available = current.availablePackages;
+  console.log("[RevenueCat] Available packages:", available.map((p: PurchasesPackage) => `${p.identifier}/${p.packageType}`).join(", "));
+  const pkg =
+    available.find((p: PurchasesPackage) => p.identifier === pkgId) ??
+    available.find((p: PurchasesPackage) => p.packageType === pkgId) ??
+    null;
+  if (!pkg) {
+    console.warn(`[RevenueCat] Package not found for "${product}" (looking for id="${pkgId}")`);
+  }
+  return pkg;
 }
 
 /**
