@@ -36,6 +36,10 @@ workflows:
       - name: Build web app
         script: |
           set -e
+          # Write VITE_ secrets into .env.local so Vite bakes them into the bundle.
+          # VITE_REVENUECAT_IOS_API_KEY must be set in the Codemagic ios_workflow env group.
+          printf "VITE_REVENUECAT_IOS_API_KEY=%s\n" "$VITE_REVENUECAT_IOS_API_KEY" \
+            > artifacts/outfit-generator/.env.local
           pnpm --filter @workspace/outfit-generator build
 
       - name: Sync Capacitor iOS
