@@ -76,13 +76,18 @@ export async function getPackageForProduct(
     return null;
   }
   const available = current.availablePackages;
-  console.log("[RevenueCat] Available packages:", available.map((p: PurchasesPackage) => `${p.identifier}/${p.packageType}`).join(", "));
+  const availableSummary = available.length === 0
+    ? "none"
+    : available.map((p: PurchasesPackage) => `${p.identifier}/${p.packageType}`).join(", ");
+  console.log("[RevenueCat] Available packages:", availableSummary);
   const pkg =
     available.find((p: PurchasesPackage) => p.identifier === pkgId) ??
     available.find((p: PurchasesPackage) => p.packageType === pkgId) ??
     null;
   if (!pkg) {
-    console.warn(`[RevenueCat] Package not found for "${product}" (looking for id="${pkgId}")`);
+    console.warn(`[RevenueCat] Package not found for "${product}" (looking for id="${pkgId}"). Available: ${availableSummary}`);
+    // Surface the available list so the on-screen error shows what StoreKit returned
+    throw new Error(`No StoreKit product found for "${pkgId}". Packages available on device: [${availableSummary}]`);
   }
   return pkg;
 }
