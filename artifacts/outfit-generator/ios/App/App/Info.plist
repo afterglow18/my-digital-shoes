@@ -4,6 +4,12 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>My Shoes needs camera access so you can photograph shoes directly into your collection.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>My Shoes reads your photo library so you can add shoe photos from your camera roll.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>My Shoes saves captured shoe photos to your photo library.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>My Shoes uses Face ID to keep your shoe collection private.</string>
     <key>CAPACITOR_DEBUG</key>

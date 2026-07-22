@@ -15,6 +15,15 @@ const config: CapacitorConfig = {
     backgroundColor: '#F4D6DD',
     // Allow inline media playback (used for wardrobe image previews)
     allowsInlineMediaPlayback: true,
+    // Privacy usage descriptions — all three are required for camera + photo library access
+    infoPlist: {
+      NSCameraUsageDescription:
+        'My Shoes needs camera access so you can photograph shoes directly into your collection.',
+      NSPhotoLibraryUsageDescription:
+        'My Shoes reads your photo library so you can add shoe photos from your camera roll.',
+      NSPhotoLibraryAddUsageDescription:
+        'My Shoes saves captured shoe photos to your photo library.',
+    },
   },
 
   plugins: {
