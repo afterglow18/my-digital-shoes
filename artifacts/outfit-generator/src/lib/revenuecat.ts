@@ -70,10 +70,11 @@ export async function getPackageForProduct(
     console.error("[RevenueCat] getOfferings failed — SDK may not be configured:", e);
     return null;
   }
-  const current = offerings.current;
+  const current = offerings.current ?? offerings.all?.["default"] ?? null;
   if (!current) {
-    console.warn("[RevenueCat] No current offering returned. All offerings:", JSON.stringify(offerings));
-    return null;
+    const allKeys = Object.keys(offerings.all ?? {}).join(", ") || "none";
+    console.warn(`[RevenueCat] No current offering. all keys: [${allKeys}]`);
+    throw new Error(`No current offering from RC. Offering keys on device: [${allKeys}]`);
   }
   const available = current.availablePackages;
   const availableSummary = available.length === 0
