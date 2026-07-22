@@ -42,12 +42,11 @@ workflows:
             echo "❌ VITE_REVENUECAT_IOS_API_KEY is empty — add it to the ios_workflow environment group in Codemagic and rebuild."
             exit 1
           fi
-          # Write VITE_ secrets into .env.local so Vite bakes them into the bundle.
-          {
-            printf "VITE_REVENUECAT_IOS_API_KEY=%s\n" "$VITE_REVENUECAT_IOS_API_KEY"
-            printf "VITE_REVENUECAT_TEST_API_KEY=%s\n" "$VITE_REVENUECAT_TEST_API_KEY"
-          } > artifacts/outfit-generator/.env.local
-          echo "✅ .env.local written (RC iOS key prefix: ${VITE_REVENUECAT_IOS_API_KEY:0:8}...)"
+          echo "✅ RC iOS key present (prefix: ${VITE_REVENUECAT_IOS_API_KEY:0:8}...)"
+          # Pass VITE_ secrets inline so Vite bakes them into the bundle
+          # without relying on .env file paths.
+          VITE_REVENUECAT_IOS_API_KEY="$VITE_REVENUECAT_IOS_API_KEY" \
+          VITE_REVENUECAT_TEST_API_KEY="$VITE_REVENUECAT_TEST_API_KEY" \
           pnpm --filter @workspace/outfit-generator build
 
       - name: Sync Capacitor iOS
