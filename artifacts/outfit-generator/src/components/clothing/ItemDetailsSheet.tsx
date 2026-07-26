@@ -2,15 +2,17 @@
  * ItemDetailsSheet — full-screen overlay showing a clothing item's details.
  * Every field is optional and editable. A "Save" button appears only when
  * the form is dirty. Delete is always available.
+ * Includes "Remove Background" for on-device background stripping of saved photos.
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Trash2, Save, ChevronDown } from "lucide-react";
+import { X, Heart, Trash2, Save, ChevronDown, Loader2, Wand2, CheckCircle2, AlertCircle } from "lucide-react";
 import type { ClothingItem, ClothingItemUpdateCategory } from "@/types/local";
 import { useUpdateClothingItem, useDeleteClothingItem, getListClothingQueryKey } from "@/hooks/useLocalWardrobe";
 import { getListOutfitsQueryKey } from "@/hooks/useLocalOutfits";
 import { useQueryClient } from "@tanstack/react-query";
 import { getImageUrl } from "@/lib/utils";
+import { removeBackground } from "@/lib/backgroundRemoval";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -117,9 +119,14 @@ function isDirty(form: FormState, item: ClothingItem): boolean {
   );
 }
 
+type BgState = "idle" | "removing" | "done" | "failed";
+
 export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetProps) {
   const [form, setForm]                   = useState<FormState | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [bgState, setBgState]             = useState<BgState>("idle");
+  // Track which item ID the bg state belongs to so stale async results are discarded
+  const bgItemRef = useRef<string | null>(null);
 
   const updateItem  = useUpdateClothingItem();
   const deleteItem  = useDeleteClothingItem();
@@ -128,6 +135,8 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
   useEffect(() => {
     if (item) setForm(toForm(item));
     setShowDeleteConfirm(false);
+    setBgState("idle");
+    bgItemRef.current = item?.id ?? null;
   }, [item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!item || !form) return null;
@@ -176,6 +185,35 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
     );
   };
 
+  const handleRemoveBg = async () => {
+    if (!item.imageObjectPath || bgState === "removing") return;
+    const itemId = item.id;
+    bgItemRef.current = itemId;
+    setBgState("removing");
+    try {
+      const resultUrl = await removeBackground(item.imageObjectPath);
+      // Discard if user navigated away or opened a different item
+      if (bgItemRef.current !== itemId) return;
+      await new Promise<void>((resolve, reject) => {
+        updateItem.mutate(
+          { id: itemId, data: { imageObjectPath: resultUrl } },
+          {
+            onSuccess: () => { invalidate(); resolve(); },
+            onError: reject,
+          },
+        );
+      });
+      if (bgItemRef.current !== itemId) return;
+      setBgState("done");
+    } catch (err) {
+      console.warn("Background removal failed:", err);
+      if (bgItemRef.current === itemId) setBgState("failed");
+    }
+  };
+
+  // Whether the current photo looks like it may already be transparent (PNG data URL)
+  const isPng = item.imageObjectPath?.startsWith("data:image/png");
+
   return (
     <motion.div
       initial={{ opacity: 0, y: "100%" }}
@@ -223,20 +261,64 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
         </div>
       </div>
 
-      {/* Photo */}
+      {/* Photo + remove-bg button */}
       {item.imageObjectPath && (
-        <div
-          className="w-full h-52 flex-shrink-0 border-b-2 border-black"
-          style={{
-            backgroundImage: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%)",
-            backgroundSize: "16px 16px",
-          }}
-        >
-          <img
-            src={getImageUrl(item.imageObjectPath)!}
-            alt={item.name}
-            className="w-full h-full object-contain"
-          />
+        <div className="flex-shrink-0 border-b-2 border-black">
+          {/* Photo */}
+          <div
+            className="w-full h-52"
+            style={{
+              backgroundImage: isPng
+                ? "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%)"
+                : undefined,
+              backgroundSize: isPng ? "16px 16px" : undefined,
+              background: isPng ? undefined : "#111",
+            }}
+          >
+            <img
+              src={getImageUrl(item.imageObjectPath)!}
+              alt={item.name}
+              className="w-full h-full object-contain"
+            />
+          </div>
+
+          {/* Remove Background button */}
+          {bgState !== "done" && (
+            <div className="px-4 py-3 bg-white border-t border-black/10">
+              <button
+                onClick={handleRemoveBg}
+                disabled={bgState === "removing"}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
+                           border-2 border-black font-bold text-xs uppercase tracking-wide
+                           shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+                           active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
+                           disabled:opacity-50 disabled:cursor-not-allowed transition-all
+                           bg-white"
+              >
+                {bgState === "removing" ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Removing Background…</>
+                ) : bgState === "failed" ? (
+                  <><AlertCircle className="w-3.5 h-3.5 text-red-500" /> Failed — Tap to Retry</>
+                ) : (
+                  <><Wand2 className="w-3.5 h-3.5" /> Remove Background ✨</>
+                )}
+              </button>
+              {bgState === "failed" && (
+                <p className="text-center text-[10px] text-red-500 mt-1">
+                  Could not remove background. Check your connection and try again.
+                </p>
+              )}
+            </div>
+          )}
+
+          {bgState === "done" && (
+            <div className="px-4 py-3 bg-white border-t border-black/10 flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <span className="text-xs font-bold uppercase tracking-wide text-green-700">
+                Background removed!
+              </span>
+            </div>
+          )}
         </div>
       )}
 

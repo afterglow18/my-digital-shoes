@@ -13,7 +13,6 @@ import { X, Loader2, Check, RotateCcw } from "lucide-react";
 import { useCreateClothingItem, getListClothingQueryKey } from "@/hooks/useLocalWardrobe";
 import type { ClothingItem } from "@/types/local";
 import { useQueryClient } from "@tanstack/react-query";
-import { encodeToPng } from "@/lib/processImage";
 import { removeBackground, blobToDataUrl, dataUrlToBlob } from "@/lib/backgroundRemoval";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -29,7 +28,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
 
 type Phase = "pick" | "encoding" | "preview" | "uploading";
 
-interface UploadProgress { done: number; total: number; }
+interface UploadProgress { done: number; total: number; label: string; }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -203,24 +202,46 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
     }
   }, [selected, cleanedBlob, originalBlob, category, existingCount, createItem, queryClient, onCreated, handleClose]);
 
-  // ── Multi-file batch flow (gallery multi-select) ───────────────────────────
+  // ── Multi-file batch flow (gallery multi-select, bg removal auto-applied) ──
 
-  const saveBlob = useCallback(async (blob: Blob, countOffset = 0): Promise<boolean> => {
+  /**
+   * Encode a file to JPEG, attempt bg removal, save to IndexedDB.
+   * Falls back to original JPEG if removal fails — never blocks the batch.
+   */
+  const processAndSave = useCallback(async (
+    file: File,
+    countOffset: number,
+    onStep: (label: string) => void,
+  ): Promise<boolean> => {
     try {
-      let png: Blob;
+      // 1. Encode to compact JPEG
+      onStep("Preparing…");
+      let jpeg: Blob;
       try {
-        png = await encodeToPng(blob);
+        jpeg = await encodeForUpload(file);
       } catch {
         return false;
       }
-      const dataUrl  = await blobToDataUrl(png);
-      const label    = CATEGORY_LABELS[category];
+
+      // 2. Attempt background removal — fall back gracefully
+      let finalDataUrl: string;
+      try {
+        onStep("Removing background…");
+        const rawDataUrl = await blobToDataUrl(jpeg);
+        finalDataUrl = await removeBackground(rawDataUrl);
+      } catch {
+        finalDataUrl = await blobToDataUrl(jpeg);
+      }
+
+      // 3. Save to IndexedDB
+      onStep("Saving…");
+      const catLabel = CATEGORY_LABELS[category];
       const n        = existingCount + countOffset + 1;
-      const autoName = n === 1 ? label : `${label} ${n}`;
+      const autoName = n === 1 ? catLabel : `${catLabel} ${n}`;
 
       await new Promise<void>((resolve, reject) => {
         createItem.mutate(
-          { data: { name: autoName, category, imageObjectPath: dataUrl } },
+          { data: { name: autoName, category, imageObjectPath: finalDataUrl } },
           {
             onSuccess: (createdItem) => {
               queryClient.invalidateQueries({ queryKey: getListClothingQueryKey() });
@@ -244,16 +265,18 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
       handleFile(files[0]);
       return;
     }
-    // Multiple files → batch (no comparison)
+    // Multiple files → batch with auto bg removal
     setErrorMsg(null);
     setPhase("uploading");
-    setProgress({ done: 0, total: files.length });
+    setProgress({ done: 0, total: files.length, label: "Starting…" });
 
     let saved = 0;
     for (let i = 0; i < files.length; i++) {
-      const ok = await saveBlob(files[i], i);
+      const ok = await processAndSave(files[i], i, (stepLabel) => {
+        setProgress({ done: i, total: files.length, label: stepLabel });
+      });
       if (ok) saved++;
-      setProgress({ done: i + 1, total: files.length });
+      setProgress({ done: i + 1, total: files.length, label: "Done" });
     }
 
     if (saved === 0) {
@@ -263,7 +286,7 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
     } else {
       handleClose();
     }
-  }, [handleFile, saveBlob, handleClose]);
+  }, [handleFile, processAndSave, handleClose]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -516,12 +539,26 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
               <Loader2 className="w-12 h-12 animate-spin" strokeWidth={1.5} />
             </div>
             <div className="text-center">
-              <p className="font-display font-bold text-2xl uppercase tracking-tight">Saving…</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {progress && progress.total > 1
-                  ? `${progress.done} of ${progress.total} photos added.`
-                  : "Adding to your vanity."}
-              </p>
+              {progress && progress.total > 1 ? (
+                <>
+                  <p className="font-display font-bold text-2xl uppercase tracking-tight">
+                    Photo {Math.min(progress.done + 1, progress.total)} of {progress.total}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">{progress.label}</p>
+                  {/* Progress bar */}
+                  <div className="mt-4 w-48 h-2 border-2 border-black rounded-full overflow-hidden bg-white mx-auto">
+                    <div
+                      className="h-full bg-black rounded-full transition-all duration-300"
+                      style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="font-display font-bold text-2xl uppercase tracking-tight">Saving…</p>
+                  <p className="text-sm text-muted-foreground mt-1">Adding to your vanity.</p>
+                </>
+              )}
             </div>
           </div>
         )}
