@@ -318,7 +318,7 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
       setDisplayImageUrl(item.imageObjectPath ?? null);
     }
     setShowDeleteConfirm(false);
-    setCleanPhase("idle");
+    setCleanPhase(item?.photoCleaned ? "done" : "idle");
     setCleanedUrl(null);
     cleanItemRef.current = item?.id ?? null;
   }, [item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -406,7 +406,7 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
     // 2. Fire DB write in the background — no await, no blocking.
     if (chosen === "cleaned") {
       updateItem.mutate(
-        { id: item.id, data: { imageObjectPath: chosenUrl } },
+        { id: item.id, data: { imageObjectPath: chosenUrl, photoCleaned: true } },
         { onSuccess: invalidate },
       );
     }

@@ -25,6 +25,8 @@ export interface ClothingItem {
   notes: string | null;
   isFavorite: boolean;
   timesWorn: number;
+  /** True once the user has confirmed a background-removal result for this item. */
+  photoCleaned: boolean;
   createdAt: string;
   updatedAt: string;
 }
