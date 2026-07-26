@@ -414,7 +414,11 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
             )}
 
             <p className="text-center font-bold text-[11px] uppercase tracking-widest opacity-40">
-              {bgProcessing ? "Removing background…" : bgFailed ? "Background removal failed" : "Tap to choose"}
+              {bgProcessing && selected === "original"
+                ? "Cleaning in progress — original ready to save"
+                : bgProcessing
+                ? "Removing background…"
+                : bgFailed ? "Background removal failed" : "Tap to choose"}
             </p>
 
             {/* Side-by-side cards */}
@@ -514,16 +518,14 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
               </button>
               <button
                 onClick={handleSave}
-                disabled={bgProcessing}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl
                            border-2 border-black font-bold text-sm uppercase tracking-wide text-white
                            shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
-                           active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all
-                           disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: bgProcessing ? "#555" : "linear-gradient(to bottom, #1c1c1c, #0a0a0a)" }}
+                           active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                style={{ background: "linear-gradient(to bottom, #1c1c1c, #0a0a0a)" }}
               >
                 <Check className="w-4 h-4" />
-                {bgProcessing ? "Processing…" : "Save to Closet"}
+                Save to Closet
               </button>
             </div>
           </div>
