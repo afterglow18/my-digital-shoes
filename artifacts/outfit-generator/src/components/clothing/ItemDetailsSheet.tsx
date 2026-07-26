@@ -596,11 +596,9 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
           {!showDeleteConfirm ? (
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              disabled={cleanPhase === "removing"}
               className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm
                          font-bold uppercase border-2 border-black/20 text-black/35
-                         hover:border-red-500 hover:text-red-600 transition-all
-                         disabled:hidden"
+                         hover:border-red-500 hover:text-red-600 transition-all"
             >
               <Trash2 className="w-4 h-4" />
               Delete from Vanity Forever
