@@ -1,20 +1,31 @@
 /**
- * ItemDetailsSheet — full-screen overlay showing a clothing item's details.
- * Every field is optional and editable. A "Save" button appears only when
- * the form is dirty. Delete is always available.
- * Includes "Remove Background" for on-device background stripping of saved photos.
+ * ItemDetailsSheet — full-screen overlay for a clothing item's details.
+ *
+ * "Clean Up Photo" flow:
+ *   1. Tap button → spinner appears, bg removal runs on-device (WASM, no API key).
+ *   2. When done, a comparison overlay slides up showing Original | Cleaned side by side.
+ *   3. User taps a card to select it (pink ring + checkmark), then confirms.
+ *   4. Chosen URL is written to local displayImageUrl state immediately — no flash.
+ *      DB write fires in the background.
  */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Trash2, Save, ChevronDown, Loader2, Wand2, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  X, Heart, Trash2, Save, ChevronDown,
+  Loader2, Wand2, AlertCircle, Check, ChevronLeft,
+} from "lucide-react";
 import type { ClothingItem, ClothingItemUpdateCategory } from "@/types/local";
-import { useUpdateClothingItem, useDeleteClothingItem, getListClothingQueryKey } from "@/hooks/useLocalWardrobe";
+import {
+  useUpdateClothingItem,
+  useDeleteClothingItem,
+  getListClothingQueryKey,
+} from "@/hooks/useLocalWardrobe";
 import { getListOutfitsQueryKey } from "@/hooks/useLocalOutfits";
 import { useQueryClient } from "@tanstack/react-query";
 import { getImageUrl } from "@/lib/utils";
 import { removeBackground } from "@/lib/backgroundRemoval";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Sub-components ─────────────────────────────────────────────────────────────
 
 const SEASON_OPTIONS   = ["", "Spring", "Summer", "Fall", "Winter", "All Season"];
 const OCCASION_OPTIONS = ["", "Casual", "Work", "Formal", "Sport", "Special Event"];
@@ -73,7 +84,171 @@ function SelectField({
   );
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Photo comparison overlay ───────────────────────────────────────────────────
+
+interface CompareOverlayProps {
+  originalUrl: string;
+  cleanedUrl:  string;
+  onConfirm:   (chosen: "original" | "cleaned") => void;
+  onCancel:    () => void;
+}
+
+function CompareOverlay({ originalUrl, cleanedUrl, onConfirm, onCancel }: CompareOverlayProps) {
+  const [selected, setSelected] = useState<"original" | "cleaned">("cleaned");
+
+  return (
+    <motion.div
+      initial={{ y: "100%", opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: "100%", opacity: 0 }}
+      transition={{ type: "spring", damping: 28, stiffness: 240 }}
+      className="fixed inset-0 z-[80] flex flex-col max-w-md mx-auto bg-[#f9f4ee]"
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-4 pb-3 bg-white border-b-2 border-black flex-shrink-0"
+        style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
+      >
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-1.5 font-bold text-sm uppercase tracking-wide"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Back
+        </button>
+        <h2 className="font-display font-bold text-xl uppercase tracking-tight">Clean Up Photo</h2>
+        <div className="w-16" /> {/* spacer */}
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 flex flex-col gap-5 p-5 overflow-y-auto">
+        <p className="text-center text-[11px] font-bold uppercase tracking-widest text-black/40">
+          Tap to choose a version
+        </p>
+
+        {/* Side-by-side cards */}
+        <div className="flex gap-3">
+          {/* Original */}
+          <button
+            onClick={() => setSelected("original")}
+            className="flex-1 flex flex-col rounded-2xl overflow-hidden transition-all"
+            style={{
+              border: selected === "original"
+                ? "4px solid #ec4899"
+                : "4px solid rgba(0,0,0,0.12)",
+              padding: 0,
+              background: "none",
+            }}
+          >
+            <div
+              className="relative w-full"
+              style={{ minHeight: 200, background: "#111" }}
+            >
+              <img
+                src={originalUrl}
+                alt="Original"
+                className="w-full object-contain"
+                style={{ maxHeight: 200, display: "block" }}
+              />
+              {selected === "original" && (
+                <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-pink-500
+                                flex items-center justify-center shadow-md">
+                  <Check size={13} color="white" strokeWidth={3} />
+                </div>
+              )}
+            </div>
+            <div
+              className="py-2 text-center text-[11px] font-bold uppercase tracking-wide"
+              style={{
+                background: selected === "original" ? "#fce7f3" : "white",
+                color:      selected === "original" ? "#be185d" : "#000",
+              }}
+            >
+              Original
+            </div>
+          </button>
+
+          {/* Cleaned */}
+          <button
+            onClick={() => setSelected("cleaned")}
+            className="flex-1 flex flex-col rounded-2xl overflow-hidden transition-all"
+            style={{
+              border: selected === "cleaned"
+                ? "4px solid #ec4899"
+                : "4px solid rgba(0,0,0,0.12)",
+              padding: 0,
+              background: "none",
+            }}
+          >
+            {/* Checkerboard background shows transparency */}
+            <div
+              className="relative w-full"
+              style={{
+                minHeight: 200,
+                background: "repeating-conic-gradient(#d1d5db 0% 25%, white 0% 50%) 0 0 / 12px 12px",
+              }}
+            >
+              <img
+                src={cleanedUrl}
+                alt="Background removed"
+                className="w-full object-contain"
+                style={{ maxHeight: 200, display: "block" }}
+              />
+              {selected === "cleaned" && (
+                <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-pink-500
+                                flex items-center justify-center shadow-md">
+                  <Check size={13} color="white" strokeWidth={3} />
+                </div>
+              )}
+            </div>
+            <div
+              className="py-2 text-center text-[11px] font-bold uppercase tracking-wide"
+              style={{
+                background: selected === "cleaned" ? "#fce7f3" : "white",
+                color:      selected === "cleaned" ? "#be185d" : "#000",
+              }}
+            >
+              Cleaned ✨
+            </div>
+          </button>
+        </div>
+
+        {/* Hint text */}
+        <p className="text-center text-xs text-black/40 leading-snug">
+          {selected === "cleaned"
+            ? "Background removed. The original is not affected unless you save."
+            : "Keep the original photo as-is."}
+        </p>
+      </div>
+
+      {/* CTA buttons */}
+      <div
+        className="flex flex-col gap-2 px-5 py-4 bg-white border-t-2 border-black flex-shrink-0"
+        style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+      >
+        <button
+          onClick={() => onConfirm(selected)}
+          className="w-full py-3.5 rounded-xl border-2 border-black font-bold text-sm uppercase
+                     tracking-wide text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+                     active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+          style={{ background: "linear-gradient(to bottom, #1c1c1c, #0a0a0a)" }}
+        >
+          {selected === "cleaned" ? "Save Cleaned Version" : "Keep Original"}
+        </button>
+        <button
+          onClick={onCancel}
+          className="w-full py-3 rounded-xl border-2 border-black/20 font-bold text-sm uppercase
+                     tracking-wide text-black/40 bg-transparent
+                     active:bg-black/5 transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 
 interface ItemDetailsSheetProps {
   item: ClothingItem | null;
@@ -119,25 +294,39 @@ function isDirty(form: FormState, item: ClothingItem): boolean {
   );
 }
 
-type BgState = "idle" | "removing" | "done" | "failed";
+type CleanPhase = "idle" | "removing" | "compare" | "failed";
 
 export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetProps) {
-  const [form, setForm]                   = useState<FormState | null>(null);
+  const [form,             setForm]             = useState<FormState | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [bgState, setBgState]             = useState<BgState>("idle");
-  // Track which item ID the bg state belongs to so stale async results are discarded
-  const bgItemRef = useRef<string | null>(null);
+
+  // Displayed photo URL — updated optimistically before DB write completes.
+  const [displayImageUrl, setDisplayImageUrl]  = useState<string | null>(null);
+
+  // Background-removal flow
+  const [cleanPhase, setCleanPhase]            = useState<CleanPhase>("idle");
+  const [cleanedUrl, setCleanedUrl]            = useState<string | null>(null);
+  const cleanItemRef = useRef<string | null>(null); // guards stale async results
 
   const updateItem  = useUpdateClothingItem();
   const deleteItem  = useDeleteClothingItem();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (item) setForm(toForm(item));
+    if (item) {
+      setForm(toForm(item));
+      setDisplayImageUrl(item.imageObjectPath ?? null);
+    }
     setShowDeleteConfirm(false);
-    setBgState("idle");
-    bgItemRef.current = item?.id ?? null;
+    setCleanPhase("idle");
+    setCleanedUrl(null);
+    cleanItemRef.current = item?.id ?? null;
   }, [item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: getListClothingQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListOutfitsQueryKey() });
+  }, [queryClient]);
 
   if (!item || !form) return null;
 
@@ -145,10 +334,7 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
   const patch = (key: keyof FormState) => (value: string | boolean) =>
     setForm((prev) => prev ? { ...prev, [key]: value } : prev);
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: getListClothingQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getListOutfitsQueryKey() });
-  };
+  // ── Form save ──────────────────────────────────────────────────────────────
 
   const handleSave = () => {
     updateItem.mutate(
@@ -172,6 +358,8 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
     );
   };
 
+  // ── Delete ─────────────────────────────────────────────────────────────────
+
   const handleDelete = () => {
     deleteItem.mutate(
       { id: item.id },
@@ -185,236 +373,265 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
     );
   };
 
-  const handleRemoveBg = async () => {
-    if (!item.imageObjectPath || bgState === "removing") return;
+  // ── Clean Up Photo ─────────────────────────────────────────────────────────
+
+  const handleStartClean = async () => {
+    const src = displayImageUrl;
+    if (!src || cleanPhase === "removing") return;
     const itemId = item.id;
-    bgItemRef.current = itemId;
-    setBgState("removing");
+    cleanItemRef.current = itemId;
+    setCleanPhase("removing");
+    setCleanedUrl(null);
     try {
-      const resultUrl = await removeBackground(item.imageObjectPath);
-      // Discard if user navigated away or opened a different item
-      if (bgItemRef.current !== itemId) return;
-      await new Promise<void>((resolve, reject) => {
-        updateItem.mutate(
-          { id: itemId, data: { imageObjectPath: resultUrl } },
-          {
-            onSuccess: () => { invalidate(); resolve(); },
-            onError: reject,
-          },
-        );
-      });
-      if (bgItemRef.current !== itemId) return;
-      setBgState("done");
+      const result = await removeBackground(src);
+      if (cleanItemRef.current !== itemId) return; // navigated away
+      setCleanedUrl(result);
+      setCleanPhase("compare");
     } catch (err) {
       console.warn("Background removal failed:", err);
-      if (bgItemRef.current === itemId) setBgState("failed");
+      if (cleanItemRef.current === itemId) setCleanPhase("failed");
     }
   };
 
-  // Whether the current photo looks like it may already be transparent (PNG data URL)
-  const isPng = item.imageObjectPath?.startsWith("data:image/png");
+  /** Called when the user confirms a choice in the comparison overlay. */
+  const handleCompareConfirm = (chosen: "original" | "cleaned") => {
+    const chosenUrl = chosen === "cleaned" && cleanedUrl ? cleanedUrl : displayImageUrl;
+    if (!chosenUrl) return;
+
+    // 1. Update the displayed photo immediately — no flash.
+    setDisplayImageUrl(chosenUrl);
+    setCleanPhase("idle");
+    setCleanedUrl(null);
+
+    // 2. Fire DB write in the background — no await, no blocking.
+    if (chosen === "cleaned") {
+      updateItem.mutate(
+        { id: item.id, data: { imageObjectPath: chosenUrl } },
+        { onSuccess: invalidate },
+      );
+    }
+    // If "original" was chosen nothing changed — nothing to write.
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const isPng = displayImageUrl?.startsWith("data:image/png");
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: "100%" }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: "100%" }}
-      transition={{ type: "spring", damping: 28, stiffness: 240 }}
-      className="fixed inset-0 z-[65] flex flex-col max-w-md mx-auto bg-[#f9f4ee] overflow-y-auto"
-    >
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-4 pb-3
-                      bg-white border-b-2 border-black flex-shrink-0"
-        style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}>
-        <h2 className="font-display font-bold text-xl uppercase tracking-tight">Item Details</h2>
-        <div className="flex items-center gap-2">
-          {/* Favourite toggle */}
-          <button
-            onClick={() => {
-              const next = !form.isFavorite;
-              patch("isFavorite")(next);
-              updateItem.mutate(
-                { id: item.id, data: { isFavorite: next } },
-                { onSuccess: invalidate },
-              );
-            }}
-            className={`w-9 h-9 border-2 border-black rounded-full flex items-center justify-center transition-all
-                        ${form.isFavorite
-                          ? "bg-red-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                          : "bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"}`}
-          >
-            <Heart
-              className="w-4 h-4"
-              fill={form.isFavorite ? "white" : "none"}
-              stroke={form.isFavorite ? "white" : "currentColor"}
-            />
-          </button>
-          {/* Close */}
-          <button
-            onClick={onClose}
-            className="w-9 h-9 border-2 border-black rounded-full flex items-center justify-center
-                       bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                       active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Photo + remove-bg button */}
-      {item.imageObjectPath && (
-        <div className="flex-shrink-0 border-b-2 border-black">
-          {/* Photo */}
-          <div
-            className="w-full h-52"
-            style={{
-              backgroundImage: isPng
-                ? "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%)"
-                : undefined,
-              backgroundSize: isPng ? "16px 16px" : undefined,
-              background: isPng ? undefined : "#111",
-            }}
-          >
-            <img
-              src={getImageUrl(item.imageObjectPath)!}
-              alt={item.name}
-              className="w-full h-full object-contain"
-            />
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: "100%" }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 240 }}
+        className="fixed inset-0 z-[65] flex flex-col max-w-md mx-auto bg-[#f9f4ee] overflow-y-auto"
+      >
+        {/* Header */}
+        <div
+          className="sticky top-0 z-10 flex items-center justify-between px-4 pb-3
+                     bg-white border-b-2 border-black flex-shrink-0"
+          style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
+        >
+          <h2 className="font-display font-bold text-xl uppercase tracking-tight">Item Details</h2>
+          <div className="flex items-center gap-2">
+            {/* Favourite toggle */}
+            <button
+              onClick={() => {
+                const next = !form.isFavorite;
+                patch("isFavorite")(next);
+                updateItem.mutate(
+                  { id: item.id, data: { isFavorite: next } },
+                  { onSuccess: invalidate },
+                );
+              }}
+              className={`w-9 h-9 border-2 border-black rounded-full flex items-center justify-center transition-all
+                          ${form.isFavorite
+                            ? "bg-red-500 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            : "bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"}`}
+            >
+              <Heart
+                className="w-4 h-4"
+                fill={form.isFavorite ? "white" : "none"}
+                stroke={form.isFavorite ? "white" : "currentColor"}
+              />
+            </button>
+            {/* Close */}
+            <button
+              onClick={onClose}
+              className="w-9 h-9 border-2 border-black rounded-full flex items-center justify-center
+                         bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                         active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
+        </div>
 
-          {/* Remove Background button */}
-          {bgState !== "done" && (
+        {/* Photo + Clean Up Photo button */}
+        {displayImageUrl && (
+          <div className="flex-shrink-0 border-b-2 border-black">
+            {/* Photo */}
+            <div
+              className="w-full h-52"
+              style={{
+                background: isPng
+                  ? "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 16px 16px"
+                  : "#111",
+              }}
+            >
+              <img
+                src={getImageUrl(displayImageUrl)!}
+                alt={item.name}
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            {/* Clean Up Photo button */}
             <div className="px-4 py-3 bg-white border-t border-black/10">
               <button
-                onClick={handleRemoveBg}
-                disabled={bgState === "removing"}
+                onClick={handleStartClean}
+                disabled={cleanPhase === "removing"}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-                           border-2 border-black font-bold text-xs uppercase tracking-wide
+                           border-2 border-black font-bold text-xs uppercase tracking-wide bg-white
                            shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
                            active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
-                           disabled:opacity-50 disabled:cursor-not-allowed transition-all
-                           bg-white"
+                           disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                {bgState === "removing" ? (
+                {cleanPhase === "removing" ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Removing Background…</>
-                ) : bgState === "failed" ? (
+                ) : cleanPhase === "failed" ? (
                   <><AlertCircle className="w-3.5 h-3.5 text-red-500" /> Failed — Tap to Retry</>
                 ) : (
-                  <><Wand2 className="w-3.5 h-3.5" /> Remove Background ✨</>
+                  <><Wand2 className="w-3.5 h-3.5" /> Clean Up Photo ✨</>
                 )}
               </button>
-              {bgState === "failed" && (
-                <p className="text-center text-[10px] text-red-500 mt-1">
-                  Could not remove background. Check your connection and try again.
+              {cleanPhase === "failed" && (
+                <p className="text-center text-[10px] text-red-500 mt-1.5">
+                  Background removal failed. Check your connection and try again.
                 </p>
               )}
             </div>
-          )}
-
-          {bgState === "done" && (
-            <div className="px-4 py-3 bg-white border-t border-black/10 flex items-center justify-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <span className="text-xs font-bold uppercase tracking-wide text-green-700">
-                Background removed!
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Form */}
-      <div className="flex-1 px-4 py-5 flex flex-col gap-4">
-        <Field label="Item Name" value={form.name} onChange={patch("name") as (v: string) => void}
-               placeholder="e.g. Charlotte Tilbury Flawless Filter" />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Brand"  value={form.brand} onChange={patch("brand") as (v: string) => void} placeholder="e.g. NARS" />
-          <Field label="Color"  value={form.color} onChange={patch("color") as (v: string) => void} placeholder="Rose Gold" />
-        </div>
-        <Field label="Size / Volume" value={form.size} onChange={patch("size") as (v: string) => void}
-               placeholder="30ml, 50ml, Full Size…" />
-        <div className="grid grid-cols-2 gap-3">
-          <SelectField label="Season"   value={form.season}   onChange={patch("season") as (v: string) => void}   options={SEASON_OPTIONS} />
-          <SelectField label="Occasion" value={form.occasion} onChange={patch("occasion") as (v: string) => void} options={OCCASION_OPTIONS} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Purchase Price" value={form.purchasePrice} onChange={patch("purchasePrice") as (v: string) => void} placeholder="$49.99" />
-          <Field label="Purchase Date"  value={form.purchaseDate}  onChange={patch("purchaseDate") as (v: string) => void}  type="date" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-black/40">Notes</label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => patch("notes")(e.target.value)}
-            placeholder="Anything worth remembering…"
-            rows={3}
-            className="w-full border-2 border-black rounded-lg px-3 py-2 text-sm font-medium
-                       bg-white focus:outline-none focus:ring-2 focus:ring-primary resize-none
-                       placeholder:font-normal placeholder:text-black/25"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <SelectField label="Category" value={form.category}
-                       onChange={patch("category") as (v: string) => void} options={CATEGORY_OPTIONS} />
-          <div className="flex flex-col gap-1 opacity-50 pointer-events-none">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Times Worn</span>
-            <div className="border-2 border-black/20 rounded-lg px-3 py-2 text-sm font-medium bg-white/50">
-              {item.timesWorn ?? 0}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="sticky bottom-0 px-4 py-4 bg-white border-t-2 border-black flex-shrink-0 flex flex-col gap-2">
-        <AnimatePresence>
-          {dirty && (
-            <motion.button
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              onClick={handleSave}
-              disabled={updateItem.isPending}
-              className="w-full btn-brutalist py-3 rounded-xl flex items-center justify-center gap-2 text-sm"
-            >
-              <Save className="w-4 h-4" />
-              {updateItem.isPending ? "Saving…" : "Save Changes"}
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        {!showDeleteConfirm ? (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm
-                       font-bold uppercase border-2 border-black/20 text-black/35
-                       hover:border-red-500 hover:text-red-600 transition-all"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete from Vanity Forever
-          </button>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowDeleteConfirm(false)}
-              className="flex-1 py-3 rounded-xl text-sm font-bold uppercase border-2 border-black bg-white
-                         shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                         active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={deleteItem.isPending}
-              className="flex-1 py-3 rounded-xl text-sm font-bold uppercase border-2 border-red-600
-                         bg-red-500 text-white shadow-[2px_2px_0px_0px_rgba(185,28,28,1)]
-                         active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all
-                         disabled:opacity-50"
-            >
-              {deleteItem.isPending ? "Deleting…" : "Yes, Delete Forever"}
-            </button>
           </div>
         )}
-      </div>
-    </motion.div>
+
+        {/* Form */}
+        <div className="flex-1 px-4 py-5 flex flex-col gap-4">
+          <Field
+            label="Item Name" value={form.name}
+            onChange={patch("name") as (v: string) => void}
+            placeholder="e.g. Charlotte Tilbury Flawless Filter"
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Brand" value={form.brand} onChange={patch("brand") as (v: string) => void} placeholder="e.g. NARS" />
+            <Field label="Color" value={form.color} onChange={patch("color") as (v: string) => void} placeholder="Rose Gold" />
+          </div>
+          <Field
+            label="Size / Volume" value={form.size}
+            onChange={patch("size") as (v: string) => void}
+            placeholder="30ml, 50ml, Full Size…"
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField label="Season"   value={form.season}   onChange={patch("season") as (v: string) => void}   options={SEASON_OPTIONS} />
+            <SelectField label="Occasion" value={form.occasion} onChange={patch("occasion") as (v: string) => void} options={OCCASION_OPTIONS} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Purchase Price" value={form.purchasePrice} onChange={patch("purchasePrice") as (v: string) => void} placeholder="$49.99" />
+            <Field label="Purchase Date"  value={form.purchaseDate}  onChange={patch("purchaseDate") as (v: string) => void}  type="date" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-black/40">Notes</label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => patch("notes")(e.target.value)}
+              placeholder="Anything worth remembering…"
+              rows={3}
+              className="w-full border-2 border-black rounded-lg px-3 py-2 text-sm font-medium
+                         bg-white focus:outline-none focus:ring-2 focus:ring-primary resize-none
+                         placeholder:font-normal placeholder:text-black/25"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField
+              label="Category" value={form.category}
+              onChange={patch("category") as (v: string) => void}
+              options={CATEGORY_OPTIONS}
+            />
+            <div className="flex flex-col gap-1 opacity-50 pointer-events-none">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Times Worn</span>
+              <div className="border-2 border-black/20 rounded-lg px-3 py-2 text-sm font-medium bg-white/50">
+                {item.timesWorn ?? 0}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 px-4 py-4 bg-white border-t-2 border-black flex-shrink-0 flex flex-col gap-2">
+          <AnimatePresence>
+            {dirty && (
+              <motion.button
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                onClick={handleSave}
+                disabled={updateItem.isPending}
+                className="w-full btn-brutalist py-3 rounded-xl flex items-center justify-center gap-2 text-sm"
+              >
+                <Save className="w-4 h-4" />
+                {updateItem.isPending ? "Saving…" : "Save Changes"}
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm
+                         font-bold uppercase border-2 border-black/20 text-black/35
+                         hover:border-red-500 hover:text-red-600 transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete from Vanity Forever
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-3 rounded-xl text-sm font-bold uppercase border-2 border-black bg-white
+                           shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                           active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteItem.isPending}
+                className="flex-1 py-3 rounded-xl text-sm font-bold uppercase border-2 border-red-600
+                           bg-red-500 text-white shadow-[2px_2px_0px_0px_rgba(185,28,28,1)]
+                           active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all
+                           disabled:opacity-50"
+              >
+                {deleteItem.isPending ? "Deleting…" : "Yes, Delete Forever"}
+              </button>
+            </div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Comparison overlay — slides up on top when bg removal finishes */}
+      <AnimatePresence>
+        {cleanPhase === "compare" && cleanedUrl && displayImageUrl && (
+          <CompareOverlay
+            originalUrl={displayImageUrl}
+            cleanedUrl={cleanedUrl}
+            onConfirm={handleCompareConfirm}
+            onCancel={() => {
+              setCleanPhase("idle");
+              setCleanedUrl(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }
