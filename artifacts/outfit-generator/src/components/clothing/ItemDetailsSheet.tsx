@@ -294,7 +294,7 @@ function isDirty(form: FormState, item: ClothingItem): boolean {
   );
 }
 
-type CleanPhase = "idle" | "removing" | "compare" | "failed";
+type CleanPhase = "idle" | "removing" | "compare" | "failed" | "done";
 
 export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetProps) {
   const [form,             setForm]             = useState<FormState | null>(null);
@@ -400,7 +400,7 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
 
     // 1. Update the displayed photo immediately — no flash.
     setDisplayImageUrl(chosenUrl);
-    setCleanPhase("idle");
+    setCleanPhase(chosen === "cleaned" ? "done" : "idle");
     setCleanedUrl(null);
 
     // 2. Fire DB write in the background — no await, no blocking.
@@ -488,27 +488,37 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
 
             {/* Clean Up Photo button */}
             <div className="px-4 py-3 bg-white border-t border-black/10">
-              <button
-                onClick={handleStartClean}
-                disabled={cleanPhase === "removing"}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-                           border-2 border-black font-bold text-xs uppercase tracking-wide bg-white
-                           shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
-                           active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
-                           disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                {cleanPhase === "removing" ? (
-                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Removing Background…</>
-                ) : cleanPhase === "failed" ? (
-                  <><AlertCircle className="w-3.5 h-3.5 text-red-500" /> Failed — Tap to Retry</>
-                ) : (
-                  <><Wand2 className="w-3.5 h-3.5" /> Clean Up Photo ✨</>
-                )}
-              </button>
-              {cleanPhase === "failed" && (
-                <p className="text-center text-[10px] text-red-500 mt-1.5">
-                  Background removal failed. Check your connection and try again.
-                </p>
+              {cleanPhase === "done" ? (
+                <div className="w-full flex items-center justify-center gap-2 py-2.5
+                                rounded-xl border-2 border-green-600 bg-green-50
+                                font-bold text-xs uppercase tracking-wide text-green-700">
+                  <Check className="w-3.5 h-3.5" /> Photo Cleaned
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleStartClean}
+                    disabled={cleanPhase === "removing"}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
+                               border-2 border-black font-bold text-xs uppercase tracking-wide bg-white
+                               shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+                               active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
+                               disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    {cleanPhase === "removing" ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Removing Background…</>
+                    ) : cleanPhase === "failed" ? (
+                      <><AlertCircle className="w-3.5 h-3.5 text-red-500" /> Failed — Tap to Retry</>
+                    ) : (
+                      <><Wand2 className="w-3.5 h-3.5" /> Clean Up Photo ✨</>
+                    )}
+                  </button>
+                  {cleanPhase === "failed" && (
+                    <p className="text-center text-[10px] text-red-500 mt-1.5">
+                      Background removal failed. Check your connection and try again.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
