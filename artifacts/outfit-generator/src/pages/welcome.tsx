@@ -122,13 +122,10 @@ export default function WelcomePage({ onEnter }: Props) {
             }}>
               <div style={{
                 fontFamily: "'Great Vibes', cursive",
-                fontSize: "clamp(20px, 6vw, 28px)",
-                fontWeight: 400,
-                textTransform: "uppercase",
-                letterSpacing: "0.12em",
-                color: "rgba(255,255,255,0.75)",
+                fontSize: "clamp(26px, 8vw, 36px)",
+                color: "rgba(255,255,255,0.80)",
                 textShadow: "0 2px 10px rgba(0,0,0,0.80)",
-                lineHeight: 1.4,
+                lineHeight: 1.3,
               }}>Welcome to</div>
               <div style={{
                 fontFamily: "'Great Vibes', cursive",
@@ -227,13 +224,10 @@ export default function WelcomePage({ onEnter }: Props) {
               <div style={{ textAlign: "center" }}>
                 <div style={{
                   fontFamily: "'Great Vibes', cursive",
-                  fontSize: "clamp(20px, 6vw, 28px)",
-                  fontWeight: 400,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
+                  fontSize: "clamp(26px, 8vw, 36px)",
                   color: "rgba(255,255,255,0.80)",
                   textShadow: "0 2px 10px rgba(0,0,0,0.80)",
-                  lineHeight: 1.4,
+                  lineHeight: 1.3,
                 }}>Welcome to</div>
                 <div style={{
                   fontFamily: "'Great Vibes', cursive",
