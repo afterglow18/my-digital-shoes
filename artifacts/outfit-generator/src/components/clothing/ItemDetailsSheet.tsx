@@ -605,7 +605,7 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
                                active:opacity-80 disabled:opacity-50 transition-all"
                   >
                     <Check className="w-4 h-4" />
-                    Wearing Today · Undo
+                    Logged · Undo
                   </button>
                 ) : (
                   <button
@@ -617,7 +617,7 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
                                active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
                                disabled:opacity-50 transition-all"
                   >
-                    Wearing These Today
+                    Wearing Today
                   </button>
                 )}
               </div>
