@@ -100,11 +100,18 @@ export async function dbCreateClothing(data: CreateClothingData): Promise<Clothi
     isFavorite: data.isFavorite ?? false,
     photoCleaned: false,
     timesWorn: 0,
+    lastWornDate: null,
+    previousLastWornDate: null,
     createdAt: now,
     updatedAt: now,
   };
   await db.put('clothing', item);
   return item;
+}
+
+export async function dbGetClothing(id: string): Promise<ClothingItem | undefined> {
+  const db = await getDB();
+  return db.get('clothing', id);
 }
 
 export async function dbUpdateClothing(id: string, data: UpdateClothingData): Promise<ClothingItem> {

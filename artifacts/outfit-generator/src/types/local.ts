@@ -25,6 +25,10 @@ export interface ClothingItem {
   notes: string | null;
   isFavorite: boolean;
   timesWorn: number;
+  /** Local date string "YYYY-MM-DD" of the most recent wear log, or null if never logged. */
+  lastWornDate: string | null;
+  /** The value of lastWornDate before the current wear session — used to restore on Unwear. */
+  previousLastWornDate: string | null;
   /** True once the user has confirmed a background-removal result for this item. */
   photoCleaned: boolean;
   createdAt: string;

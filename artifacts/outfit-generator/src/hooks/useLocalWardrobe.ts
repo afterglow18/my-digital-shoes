@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   dbListClothing,
+  dbGetClothing,
   dbCreateClothing,
   dbUpdateClothing,
   dbDeleteClothing,
@@ -32,6 +33,21 @@ export function getListClothingQueryKey(params?: { category?: string }) {
 
 export function getWardrobeStatsQueryKey() {
   return ['clothing', 'stats'];
+}
+
+// ── Single item ───────────────────────────────────────────────────────────────
+
+export function getClothingItemQueryKey(id: string) {
+  return ['clothing', 'item', id];
+}
+
+export function useGetClothingItem(id: string | null) {
+  return useQuery<ClothingItem | undefined>({
+    queryKey: id ? getClothingItemQueryKey(id) : ['clothing', 'item', '__none__'],
+    queryFn: () => (id ? dbGetClothing(id) : undefined),
+    enabled: !!id,
+    staleTime: 0,
+  });
 }
 
 // ── List ──────────────────────────────────────────────────────────────────────

@@ -18,7 +18,9 @@ import type { ClothingItem, ClothingItemUpdateCategory } from "@/types/local";
 import {
   useUpdateClothingItem,
   useDeleteClothingItem,
+  useGetClothingItem,
   getListClothingQueryKey,
+  getClothingItemQueryKey,
 } from "@/hooks/useLocalWardrobe";
 import { getListOutfitsQueryKey } from "@/hooks/useLocalOutfits";
 import { useQueryClient } from "@tanstack/react-query";
@@ -296,12 +298,30 @@ function isDirty(form: FormState, item: ClothingItem): boolean {
 
 type CleanPhase = "idle" | "removing" | "compare" | "failed" | "done";
 
+/** Returns today's local date as "YYYY-MM-DD". */
+function getTodayStr(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm   = String(d.getMonth() + 1).padStart(2, "0");
+  const dd   = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** Formats "YYYY-MM-DD" as "M/D/YY" for display. */
+function formatShortDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${m}/${d}/${String(y).slice(2)}`;
+}
+
 export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetProps) {
   const [form,             setForm]             = useState<FormState | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Displayed photo URL — updated optimistically before DB write completes.
   const [displayImageUrl, setDisplayImageUrl]  = useState<string | null>(null);
+
+  // Times-worn inline editing — null = not editing, string = draft value
+  const [timesWornDraft, setTimesWornDraft]    = useState<string | null>(null);
 
   // Background-removal flow
   const [cleanPhase, setCleanPhase]            = useState<CleanPhase>("idle");
@@ -312,6 +332,10 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
   const deleteItem  = useDeleteClothingItem();
   const queryClient = useQueryClient();
 
+  // Live item — re-fetched after every mutation so timesWorn / lastWornDate
+  // are always current without relying on the parent's stale snapshot.
+  const { data: liveItemData } = useGetClothingItem(item?.id ?? null);
+
   useEffect(() => {
     if (item) {
       setForm(toForm(item));
@@ -321,14 +345,21 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
     setCleanPhase(item?.photoCleaned ? "done" : "idle");
     setCleanedUrl(null);
     cleanItemRef.current = item?.id ?? null;
+    setTimesWornDraft(null);
   }, [item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getListClothingQueryKey() });
     queryClient.invalidateQueries({ queryKey: getListOutfitsQueryKey() });
-  }, [queryClient]);
+    if (item?.id) {
+      queryClient.invalidateQueries({ queryKey: getClothingItemQueryKey(item.id) });
+    }
+  }, [queryClient, item?.id]);
 
   if (!item || !form) return null;
+
+  // After the null guard, item is non-null — liveItemData falls back to it safely.
+  const live: ClothingItem = liveItemData ?? item;
 
   const dirty = isDirty(form, item);
   const patch = (key: keyof FormState) => (value: string | boolean) =>
@@ -370,6 +401,39 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
           onClose();
         },
       },
+    );
+  };
+
+  // ── Wear tracking ──────────────────────────────────────────────────────────
+
+  const handleWear = () => {
+    const today = getTodayStr();
+    // Persist previousLastWornDate to DB so Unwear survives close/reopen.
+    updateItem.mutate(
+      {
+        id: item.id,
+        data: {
+          lastWornDate: today,
+          previousLastWornDate: live.lastWornDate ?? null,
+          timesWorn: (live.timesWorn ?? 0) + 1,
+        },
+      },
+      { onSuccess: invalidate },
+    );
+  };
+
+  const handleUnwear = () => {
+    // Restore the date that was saved before the wear was logged.
+    updateItem.mutate(
+      {
+        id: item.id,
+        data: {
+          lastWornDate: live.previousLastWornDate ?? null,
+          previousLastWornDate: null,
+          timesWorn: Math.max(0, (live.timesWorn ?? 0) - 1),
+        },
+      },
+      { onSuccess: invalidate },
     );
   };
 
@@ -467,62 +531,99 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
           </div>
         </div>
 
-        {/* Photo + Clean Up Photo button */}
-        {displayImageUrl && (
-          <div className="flex-shrink-0 border-b-2 border-black">
-            {/* Photo */}
-            <div
-              className="w-full h-52"
-              style={{
-                background: isPng
-                  ? "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 16px 16px"
-                  : "#111",
-              }}
-            >
-              <img
-                src={getImageUrl(displayImageUrl)!}
-                alt={item.name}
-                className="w-full h-full object-contain"
-              />
-            </div>
+        {/* Photo + action buttons */}
+        <div className="flex-shrink-0 border-b-2 border-black">
+          {displayImageUrl && (
+            <>
+              {/* Photo */}
+              <div
+                className="w-full h-52"
+                style={{
+                  background: isPng
+                    ? "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 16px 16px"
+                    : "#111",
+                }}
+              >
+                <img
+                  src={getImageUrl(displayImageUrl)!}
+                  alt={item.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
 
-            {/* Clean Up Photo button */}
-            <div className="px-4 py-3 bg-white border-t border-black/10">
-              {cleanPhase === "done" ? (
-                <div className="w-full flex items-center justify-center gap-2 py-2.5
-                                rounded-xl border-2 border-green-600 bg-green-50
-                                font-bold text-xs uppercase tracking-wide text-green-700">
-                  <Check className="w-3.5 h-3.5" /> Photo Cleaned
-                </div>
-              ) : (
-                <>
-                  <button
-                    onClick={handleStartClean}
-                    disabled={cleanPhase === "removing"}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-                               border-2 border-black font-bold text-xs uppercase tracking-wide bg-white
-                               shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
-                               active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
-                               disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    {cleanPhase === "removing" ? (
-                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Removing Background…</>
-                    ) : cleanPhase === "failed" ? (
-                      <><AlertCircle className="w-3.5 h-3.5 text-red-500" /> Failed — Tap to Retry</>
-                    ) : (
-                      <><Wand2 className="w-3.5 h-3.5" /> Clean Up Photo ✨</>
+              {/* Clean Up Photo button */}
+              <div className="px-4 pt-3 pb-0 bg-white border-t border-black/10">
+                {cleanPhase === "done" ? (
+                  <div className="w-full flex items-center justify-center gap-2 py-2.5
+                                  rounded-xl border-2 border-green-600 bg-green-50
+                                  font-bold text-xs uppercase tracking-wide text-green-700">
+                    <Check className="w-3.5 h-3.5" /> Photo Cleaned
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleStartClean}
+                      disabled={cleanPhase === "removing"}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
+                                 border-2 border-black font-bold text-xs uppercase tracking-wide bg-white
+                                 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+                                 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
+                                 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {cleanPhase === "removing" ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Removing Background…</>
+                      ) : cleanPhase === "failed" ? (
+                        <><AlertCircle className="w-3.5 h-3.5 text-red-500" /> Failed — Tap to Retry</>
+                      ) : (
+                        <><Wand2 className="w-3.5 h-3.5" /> Clean Up Photo ✨</>
+                      )}
+                    </button>
+                    {cleanPhase === "failed" && (
+                      <p className="text-center text-[10px] text-red-500 mt-1.5">
+                        Background removal failed. Check your connection and try again.
+                      </p>
                     )}
+                  </>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Wear tracking button — below Clean Up Photo */}
+          {(() => {
+            const today = getTodayStr();
+            const isWornToday = live.lastWornDate === today;
+            return (
+              <div className="px-4 py-3 bg-white">
+                {isWornToday ? (
+                  <button
+                    onClick={handleUnwear}
+                    disabled={updateItem.isPending}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
+                               border-2 border-green-600 bg-green-50 font-bold text-sm uppercase
+                               tracking-wide text-green-700
+                               active:opacity-80 disabled:opacity-50 transition-all"
+                  >
+                    <Check className="w-4 h-4" />
+                    Logged ✓ · Unwear
                   </button>
-                  {cleanPhase === "failed" && (
-                    <p className="text-center text-[10px] text-red-500 mt-1.5">
-                      Background removal failed. Check your connection and try again.
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        )}
+                ) : (
+                  <button
+                    onClick={handleWear}
+                    disabled={updateItem.isPending}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
+                               border-2 border-black font-bold text-sm uppercase tracking-wide
+                               bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+                               active:translate-x-0.5 active:translate-y-0.5 active:shadow-none
+                               disabled:opacity-50 transition-all"
+                  >
+                    Wearing These Today
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+        </div>
 
         {/* Form */}
         <div className="flex-1 px-4 py-5 flex flex-col gap-4">
@@ -566,11 +667,33 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
               onChange={patch("category") as (v: string) => void}
               options={CATEGORY_OPTIONS}
             />
-            <div className="flex flex-col gap-1 opacity-50 pointer-events-none">
+            <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Times Worn</span>
-              <div className="border-2 border-black/20 rounded-lg px-3 py-2 text-sm font-medium bg-white/50">
-                {item.timesWorn ?? 0}
-              </div>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={timesWornDraft ?? String(live.timesWorn ?? 0)}
+                onFocus={() => setTimesWornDraft(String(live.timesWorn ?? 0))}
+                onChange={(e) => setTimesWornDraft(e.target.value)}
+                onBlur={() => {
+                  const parsed = parseInt(timesWornDraft ?? "", 10);
+                  const next = isNaN(parsed) ? (live.timesWorn ?? 0) : Math.max(0, parsed);
+                  setTimesWornDraft(null);
+                  if (next !== live.timesWorn) {
+                    updateItem.mutate({ id: item.id, data: { timesWorn: next } }, { onSuccess: invalidate });
+                  }
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                className="w-full border-2 border-black rounded-lg px-3 py-2 text-sm font-medium
+                           bg-white focus:outline-none focus:ring-2 focus:ring-primary
+                           shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              />
+              {live.lastWornDate && (
+                <span className="text-[10px] text-black/40 font-medium mt-0.5">
+                  Last worn: {formatShortDate(live.lastWornDate)}
+                </span>
+              )}
             </div>
           </div>
         </div>
