@@ -555,8 +555,8 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
               <div className="px-4 pt-3 pb-0 bg-white border-t border-black/10">
                 {cleanPhase === "done" ? (
                   <div className="w-full flex items-center justify-center gap-2 py-2.5
-                                  rounded-xl border-2 border-green-600 bg-green-50
-                                  font-bold text-xs uppercase tracking-wide text-green-700">
+                                  rounded-xl border-2 border-black bg-black
+                                  font-bold text-xs uppercase tracking-wide text-white">
                     <Check className="w-3.5 h-3.5" /> Photo Cleaned
                   </div>
                 ) : (
@@ -600,8 +600,8 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
                     onClick={handleUnwear}
                     disabled={updateItem.isPending}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
-                               border-2 border-green-600 bg-green-50 font-bold text-sm uppercase
-                               tracking-wide text-green-700
+                               border-2 border-black bg-black font-bold text-sm uppercase
+                               tracking-wide text-white
                                active:opacity-80 disabled:opacity-50 transition-all"
                   >
                     <Check className="w-4 h-4" />
