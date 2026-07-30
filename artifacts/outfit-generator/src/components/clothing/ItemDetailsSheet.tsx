@@ -605,7 +605,7 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
                                active:opacity-80 disabled:opacity-50 transition-all"
                   >
                     <Check className="w-4 h-4" />
-                    Logged ✓ · Unwear
+                    Logged ✓ · Undo wear
                   </button>
                 ) : (
                   <button
