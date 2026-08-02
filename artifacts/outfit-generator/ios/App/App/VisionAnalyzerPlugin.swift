@@ -4,6 +4,9 @@ import UIKit
 
 /// Native Capacitor plugin that wraps Apple Vision for on-device photo analysis.
 /// Called from the web layer via `VisionAnalyzer.analyze({ dataUrl, confidenceThreshold })`.
+///
+/// `VNImageRequestHandler.perform(_:)` is synchronous — request completion handlers
+/// fire inline before perform returns — so no DispatchGroup is needed.
 @objc(VisionAnalyzerPlugin)
 public class VisionAnalyzerPlugin: CAPPlugin {
 
@@ -23,14 +26,11 @@ public class VisionAnalyzerPlugin: CAPPlugin {
                 return
             }
 
-            let group   = DispatchGroup()
-            var labels  = [String]()
-            var texts   = [String]()
+            var labels = [String]()
+            var texts  = [String]()
 
             // ── Classification ─────────────────────────────────────────────
-            group.enter()
             let classRequest = VNClassifyImageRequest { request, _ in
-                defer { group.leave() }
                 guard let obs = request.results as? [VNClassificationObservation] else { return }
                 labels = obs
                     .filter  { $0.confidence >= threshold }
@@ -39,9 +39,7 @@ public class VisionAnalyzerPlugin: CAPPlugin {
             }
 
             // ── Text recognition ───────────────────────────────────────────
-            group.enter()
             let textRequest = VNRecognizeTextRequest { request, _ in
-                defer { group.leave() }
                 guard let obs = request.results as? [VNRecognizedTextObservation] else { return }
                 texts = obs
                     .compactMap { $0.topCandidates(1).first?.string }
@@ -51,15 +49,16 @@ public class VisionAnalyzerPlugin: CAPPlugin {
             }
             textRequest.recognitionLevel = .accurate
 
+            // perform() is synchronous: both callbacks run (and populate labels/texts)
+            // before the call returns. If it throws, resolve with empty arrays immediately.
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
                 try handler.perform([classRequest, textRequest])
             } catch {
-                // Both requests failed; groups still leave via their callbacks
-                // but if the handler threw before calling them we must leave manually.
+                call.resolve(["labels": [String](), "texts": [String]()])
+                return
             }
 
-            group.wait()
             call.resolve(["labels": labels, "texts": texts])
         }
     }
