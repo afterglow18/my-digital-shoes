@@ -578,8 +578,8 @@ export function ItemDetailsSheet({ item, onClose, onDeleted, showAddToLookbook }
                 />
               </div>
 
-              {/* Clean Up Photo button */}
-              <div className="px-4 pt-3 pb-0 bg-white border-t border-black/10">
+              {/* Clean Up Photo button — hidden in search/favorites context */}
+              {!showAddToLookbook && <div className="px-4 pt-3 pb-0 bg-white border-t border-black/10">
                 {cleanPhase === "done" ? (
                   <div className="w-full flex items-center justify-center gap-2 py-2.5
                                   rounded-xl border-2 border-black bg-black
@@ -612,11 +612,11 @@ export function ItemDetailsSheet({ item, onClose, onDeleted, showAddToLookbook }
                     )}
                   </>
                 )}
-              </div>
+              </div>}
             </>
           )}
 
-          {/* Wear tracking button — below Clean Up Photo */}
+          {/* Wear tracking button */}
           {(() => {
             const today = getTodayStr();
             const isWornToday = live.lastWornDate === today;
