@@ -195,7 +195,7 @@ export default function SavedPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search Everything…"
+            placeholder="Search…"
             className="w-full pl-10 pr-9 py-2.5 rounded-xl border-2 border-black bg-white
                        text-sm font-medium placeholder:text-black/30
                        focus:outline-none focus:ring-2 focus:ring-primary"
@@ -212,34 +212,19 @@ export default function SavedPage() {
         </div>
       </header>
 
-      {atLimit && !isLoading && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-5 border-2 border-black rounded-xl bg-primary p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-        >
-          <p className="font-display font-bold text-sm uppercase tracking-tight">🔓 Lookbook is full</p>
-          <p className="text-xs text-black/60 mt-1 mb-3 leading-snug">
-            You've saved {FREE_OUTFIT_LIMIT} looks — the free limit. Unlock to save unlimited looks.
-          </p>
-          <button
-            onClick={() => setShowUpgrade(true)}
-            className="w-full py-2.5 rounded-lg border-2 font-bold uppercase text-xs tracking-wide
-                       text-white active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all"
-            style={{
-              background: 'linear-gradient(to bottom, #707070, #555555)',
-              border: '2px solid #555555',
-              boxShadow: '3px 3px 0 rgba(0,0,0,0.85)',
-            }}
-          >
-            Unlock Forever – $9.99
-          </button>
-        </motion.div>
-      )}
+      {/* ── Page switch: search results ←→ normal outfit list ─────────────── */}
+      <AnimatePresence mode="wait" initial={false}>
 
-      {/* ── Search results ──────────────────────────────────────────────────── */}
-      {isSearching && (
-        <div className="flex flex-col gap-6">
+      {isSearching ? (
+        /* ── Search results page ─────────────────────────────────────────── */
+        <motion.div
+          key="search-results"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 14 }}
+          transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
+          className="flex flex-col gap-6"
+        >
           {/* Outfits section */}
           {outfitResults.length > 0 && (
             <div>
@@ -345,12 +330,42 @@ export default function SavedPage() {
               <p className="text-sm text-muted-foreground">Try a different word or check the spelling.</p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* ── Normal outfit list (hidden while searching) ──────────────────────── */}
-      {!isSearching && (isLoading ? (
-        <div className="flex flex-col gap-4">
+        </motion.div>
+      ) : (
+        /* ── Normal content page ──────────────────────────────────────────── */
+        <motion.div
+          key="normal-content"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+        >
+          {atLimit && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-5 border-2 border-black rounded-xl bg-primary p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <p className="font-display font-bold text-sm uppercase tracking-tight">🔓 Lookbook is full</p>
+              <p className="text-xs text-black/60 mt-1 mb-3 leading-snug">
+                You've saved {FREE_OUTFIT_LIMIT} looks — the free limit. Unlock to save unlimited looks.
+              </p>
+              <button
+                onClick={() => setShowUpgrade(true)}
+                className="w-full py-2.5 rounded-lg border-2 font-bold uppercase text-xs tracking-wide
+                           text-white active:translate-y-0.5 active:translate-x-0.5 active:shadow-none transition-all"
+                style={{
+                  background: 'linear-gradient(to bottom, #707070, #555555)',
+                  border: '2px solid #555555',
+                  boxShadow: '3px 3px 0 rgba(0,0,0,0.85)',
+                }}
+              >
+                Unlock Forever – $9.99
+              </button>
+            </motion.div>
+          )}
+          {isLoading ? (
+          <div className="flex flex-col gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-52 bg-muted animate-pulse border-2 border-black rounded-xl" />
           ))}
@@ -553,7 +568,10 @@ export default function SavedPage() {
             Head to your Shoes, spin the slots, and save looks you love.
           </p>
         </div>
-      ))}
+      )}
+        </motion.div>
+      )}
+      </AnimatePresence>
 
       {/* Upgrade sheet */}
       <AnimatePresence>
