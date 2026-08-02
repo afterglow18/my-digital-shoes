@@ -139,7 +139,7 @@ function rgbToColorName(r: number, g: number, b: number): string {
 
   // Near-achromatic shades — classify by brightness only.
   if (saturation < 35) {
-    if (brightness < 45)  return 'black';
+    if (brightness < 80)  return 'black';   // raised: most "black" shoes are dark charcoal
     if (brightness < 110) return 'dark grey';
     if (brightness < 175) return 'grey';
     if (brightness < 225) return 'light grey';
@@ -147,7 +147,7 @@ function rgbToColorName(r: number, g: number, b: number): string {
   }
 
   // Very dark saturated pixel → still call it black.
-  if (brightness < 35) return 'black';
+  if (brightness < 60) return 'black';
 
   const hue = rgbToHue(r, g, b);
 

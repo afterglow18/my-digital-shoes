@@ -9,19 +9,20 @@
  *   0 → never analyzed
  *   1 → analyzed by native iOS Vision (correct — skip on all platforms)
  *       OR analyzed by old web code without background exclusion (wrong labels)
- *   2 → analyzed and got empty labels — don't retry
- *   3 → analyzed by new background-aware web canvas (correct — skip on web)
+ *   2 → analyzed by old web code, got empty labels — retry with new threshold
+ *   3 → analyzed by old web code (background-aware but tight black threshold)
+ *   4 → analyzed by current web code (raised black threshold) — correct, skip
+ *   5 → analyzed by current web code, truly empty labels — don't retry
  *
  * Eligible for (re-)indexing:
  *   • iOS  : visionVersion === 0 only (native Vision handles it; don't overwrite)
- *   • Web  : visionVersion === 0 or visionVersion === 1
- *            (catches items labeled by the old broken code as well as unlabeled ones)
- *            visionVersion 2 (empty-label sentinel) and 3 (correct web) are skipped.
+ *   • Web  : visionVersion 0–3 (anything produced by old code gets re-run)
+ *            visionVersion 4 (current correct) and 5 (empty sentinel) are skipped.
  *
  * After analysis:
- *   • Got labels on web  → visionVersion = 3
+ *   • Got labels on web  → visionVersion = 4
  *   • Got labels on iOS  → visionVersion = 1
- *   • Empty labels       → visionVersion = 2  (stop retrying)
+ *   • Empty labels       → visionVersion = 5  (stop retrying)
  *
  * New items added mid-session can be queued via queueItemForIndexing(); they
  * are processed immediately without waiting for the next app launch.
@@ -65,9 +66,8 @@ function needsIndexing(item: { visionVersion?: number }): boolean {
     // iOS: only process items that have never been analyzed.
     return v === 0;
   }
-  // Web: process unanalyzed (0) and old-code items (1).
-  // Skip empty-label sentinel (2) and correct web labels (3+).
-  return v === 0 || v === 1;
+  // Web: process anything analyzed by old code (0–3); skip current (4) and empty-sentinel (5+).
+  return v <= 3;
 }
 
 /**
@@ -88,8 +88,8 @@ export async function indexOne(id: string): Promise<boolean> {
       visionLabels:  result.labels,
       visionText:    result.texts,
       visionVersion: result.labels.length > 0
-        ? (isNative ? 1 : 3)  // 1 = iOS Vision, 3 = background-aware web canvas
-        : 2,                  // 2 = empty labels, don't retry
+        ? (isNative ? 1 : 4)  // 1 = iOS Vision, 4 = current web canvas
+        : 5,                  // 5 = empty labels with current code, don't retry
     });
     return true;
   } catch {
