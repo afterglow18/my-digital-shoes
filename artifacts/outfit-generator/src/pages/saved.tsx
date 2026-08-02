@@ -80,6 +80,18 @@ export default function SavedPage() {
   const [notesValue, setNotesValue] = useState("");
   const notesInputRef = useRef<HTMLTextAreaElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  // Scroll the main container to the top the instant search activates so
+  // results appear right below the search bar regardless of scroll position.
+  useEffect(() => {
+    if (!searchQuery) return;
+    let el: HTMLElement | null = pageRef.current?.parentElement ?? null;
+    while (el) {
+      if (el.scrollTop > 0) { el.scrollTop = 0; break; }
+      el = el.parentElement;
+    }
+  }, [!!searchQuery]);
 
   // All items — needed for search (items can match independently of an outfit).
   const { data: allItems = [] } = useListClothing();
@@ -166,7 +178,7 @@ export default function SavedPage() {
   };
 
   return (
-    <div className="min-h-full flex flex-col pt-8 px-4 pb-8 bg-secondary/10 relative">
+    <div ref={pageRef} className="min-h-full flex flex-col pt-8 px-4 pb-8 bg-secondary/10 relative">
       <header className="mb-6">
         <h1 className="text-4xl font-display font-bold uppercase tracking-tighter mb-1">Lookbook</h1>
         <div className="flex items-center justify-between">
