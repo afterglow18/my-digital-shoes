@@ -1,6 +1,6 @@
 /**
- * useVisionIndexer — background hook that enriches existing photos with
- * vision/color labels, staggered to avoid UI jank.
+ * useVisionIndexer — background hook that enriches existing and newly-added
+ * photos with vision/color labels, staggered to avoid UI jank.
  *
  * Runs at most once per JS session (module-level guard).
  *
@@ -22,68 +22,132 @@
  *   • Got labels on web  → visionVersion = 3
  *   • Got labels on iOS  → visionVersion = 1
  *   • Empty labels       → visionVersion = 2  (stop retrying)
+ *
+ * New items added mid-session can be queued via queueItemForIndexing(); they
+ * are processed immediately without waiting for the next app launch.
+ * On analysis error the item keeps visionVersion === 0 for next-session retry.
  */
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { dbListClothing, dbUpdateClothing } from '@/lib/db';
+import { dbGetClothing, dbListClothing, dbUpdateClothing } from '@/lib/db';
 import { analyzeImage } from '@/lib/visionAnalyzer';
 
 /** ms between each photo — keeps the UI thread free. */
 const DELAY_MS = 350;
 
-/** Module-level guard: indexing starts only once per JS session. */
-let _indexingStarted = false;
+/** Module-level guard: the background loop starts only once per JS session. */
+let _loopStarted = false;
+
+/** IDs queued for indexing during the current session. */
+const _liveQueue: string[] = [];
+
+/**
+ * Resolve function for the current "wait for work" promise.
+ * Called by queueItemForIndexing to wake the sleeping loop.
+ */
+let _wakeup: (() => void) | null = null;
+
+/**
+ * Queue a newly-added item for immediate vision indexing within this session.
+ * Safe to call before the hook mounts — items are buffered and processed once
+ * the loop is running.
+ */
+export function queueItemForIndexing(id: string): void {
+  _liveQueue.push(id);
+  _wakeup?.();
+}
+
+/** Returns true if item needs (re-)indexing on the current platform. */
+function needsIndexing(item: { visionVersion?: number }): boolean {
+  const v        = item.visionVersion ?? 0;
+  const isNative = Capacitor.isNativePlatform();
+  if (isNative) {
+    // iOS: only process items that have never been analyzed.
+    return v === 0;
+  }
+  // Web: process unanalyzed (0) and old-code items (1).
+  // Skip empty-label sentinel (2) and correct web labels (3+).
+  return v === 0 || v === 1;
+}
+
+/**
+ * Analyze one item by ID and persist the results.
+ * Returns true on success, false on failure (visionVersion stays 0 for retry).
+ */
+async function indexOne(id: string): Promise<boolean> {
+  try {
+    const item = await dbGetClothing(id);
+    if (!item?.imageObjectPath) return false;
+    // Skip if already sufficiently indexed on this platform.
+    if (!needsIndexing(item)) return true;
+    const isNative = Capacitor.isNativePlatform();
+    const result   = await analyzeImage(item.imageObjectPath);
+    await dbUpdateClothing(id, {
+      visionLabels:  result.labels,
+      visionText:    result.texts,
+      visionVersion: result.labels.length > 0
+        ? (isNative ? 1 : 3)  // 1 = iOS Vision, 3 = background-aware web canvas
+        : 2,                  // 2 = empty labels, don't retry
+    });
+    return true;
+  } catch {
+    // Intentionally swallow — keeps visionVersion === 0 for next-session retry.
+    return false;
+  }
+}
 
 export function useVisionIndexer(): { isIndexing: boolean } {
   const [isIndexing, setIsIndexing] = useState(false);
 
   useEffect(() => {
-    if (_indexingStarted) return;
-    _indexingStarted = true;
+    if (_loopStarted) return;
+    _loopStarted = true;
 
-    const isNative = Capacitor.isNativePlatform();
     let active = true;
 
     async function run() {
-      const items = await dbListClothing();
-      const pending = items.filter((i) => {
-        if (!i.imageObjectPath) return false;
-        const v = i.visionVersion ?? 0;
-        if (isNative) {
-          // On iOS: only process items that have never been analyzed.
-          return v === 0;
-        }
-        // On web: process unanalyzed (0) and old-code items (1).
-        // Skip empty-label sentinel (2) and correct web labels (3+).
-        return v === 0 || v === 1;
-      });
+      // ── Phase 1: catch up on any unindexed items from previous sessions ──
+      const items   = await dbListClothing();
+      const pending = items.filter((i) => i.imageObjectPath && needsIndexing(i));
 
-      if (pending.length === 0) return;
-      setIsIndexing(true);
-
-      for (const item of pending) {
-        if (!active) break;
-        try {
-          const result = await analyzeImage(item.imageObjectPath!);
-          if (!active) break;
-          await dbUpdateClothing(item.id, {
-            visionLabels:  result.labels,
-            visionText:    result.texts,
-            visionVersion: result.labels.length > 0
-              ? (isNative ? 1 : 3)  // 1 = iOS Vision, 3 = background-aware web canvas
-              : 2,                  // 2 = empty labels, don't retry
-          });
-        } catch {
-          // One failure must not stop the whole queue.
+      if (pending.length > 0) {
+        setIsIndexing(true);
+        for (const item of pending) {
+          if (!active) return;
+          await indexOne(item.id);
+          await new Promise<void>((r) => setTimeout(r, DELAY_MS));
         }
-        await new Promise<void>((r) => setTimeout(r, DELAY_MS));
       }
 
-      if (active) setIsIndexing(false);
+      // ── Phase 2: live queue — stay active for the rest of the session ──
+      while (active) {
+        // Drain all currently buffered IDs.
+        while (_liveQueue.length > 0) {
+          const id = _liveQueue.shift()!;
+          if (!active) return;
+          setIsIndexing(true);
+          await indexOne(id);
+          await new Promise<void>((r) => setTimeout(r, DELAY_MS));
+        }
+
+        // Signal idle between bursts.
+        if (active) setIsIndexing(false);
+
+        // Sleep until queueItemForIndexing wakes us or the hook unmounts.
+        await new Promise<void>((resolve) => {
+          _wakeup = resolve;
+        });
+        _wakeup = null;
+      }
     }
 
     run().catch(console.warn);
-    return () => { active = false; };
+
+    return () => {
+      active = false;
+      // Wake the sleeping loop so it can exit the while(active) check cleanly.
+      _wakeup?.();
+    };
   }, []);
 
   return { isIndexing };

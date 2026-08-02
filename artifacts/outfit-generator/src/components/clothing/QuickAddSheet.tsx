@@ -14,9 +14,7 @@ import { useCreateClothingItem, getListClothingQueryKey } from "@/hooks/useLocal
 import type { ClothingItem } from "@/types/local";
 import { useQueryClient } from "@tanstack/react-query";
 import { removeBackground, blobToDataUrl, dataUrlToBlob } from "@/lib/backgroundRemoval";
-import { analyzeImage } from "@/lib/visionAnalyzer";
-import { dbUpdateClothing } from "@/lib/db";
-import { Capacitor } from "@capacitor/core";
+import { queueItemForIndexing } from "@/hooks/useVisionIndexer";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -192,6 +190,9 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
             onSuccess: (createdItem) => {
               queryClient.invalidateQueries({ queryKey: getListClothingQueryKey() });
               if (onCreated) onCreated(createdItem);
+              // Queue for vision indexing within this session so search works
+              // immediately without requiring an app restart.
+              queueItemForIndexing(createdItem.id);
               resolve();
             },
             onError: reject,
@@ -249,13 +250,9 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
             onSuccess: (createdItem) => {
               queryClient.invalidateQueries({ queryKey: getListClothingQueryKey() });
               if (onCreated) onCreated(createdItem);
-              analyzeImage(finalDataUrl).then((r) =>
-                dbUpdateClothing(createdItem.id, {
-                  visionLabels: r.labels,
-                  visionText: r.texts,
-                  visionVersion: r.labels.length > 0 ? (Capacitor.isNativePlatform() ? 1 : 3) : 2,
-                }),
-              ).catch(() => {/* ignore */});
+              // Queue for vision indexing — the background loop handles retries
+              // and won't block the batch UI.
+              queueItemForIndexing(createdItem.id);
               resolve();
             },
             onError: reject,
