@@ -28,6 +28,8 @@ import { removeBackground as imglyRemoveBackground } from "@imgly/background-rem
 let ortConfigured: Promise<void> | null = null;
 
 async function configureOrt(): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore — onnxruntime-web@1.21.0 types.d.ts is not picked up via package.json exports
   const ort = await import("onnxruntime-web");
 
   // Lock proxy = true so imgly's internal `proxy = false` write is silently ignored.

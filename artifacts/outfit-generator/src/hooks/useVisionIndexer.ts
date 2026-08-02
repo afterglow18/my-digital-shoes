@@ -73,8 +73,10 @@ function needsIndexing(item: { visionVersion?: number }): boolean {
 /**
  * Analyze one item by ID and persist the results.
  * Returns true on success, false on failure (visionVersion stays 0 for retry).
+ *
+ * Exported for unit testing only — do not call from application code.
  */
-async function indexOne(id: string): Promise<boolean> {
+export async function indexOne(id: string): Promise<boolean> {
   try {
     const item = await dbGetClothing(id);
     if (!item?.imageObjectPath) return false;
