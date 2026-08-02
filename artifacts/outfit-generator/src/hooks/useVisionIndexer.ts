@@ -7,21 +7,21 @@
  * Version scheme
  * ──────────────
  *   0 → never analyzed
- *   1 → analyzed by native iOS Vision (correct — skip on all platforms)
+ *   1 → analyzed by native iOS Vision only (object labels, NO color labels) — stale
  *       OR analyzed by old web code without background exclusion (wrong labels)
- *   2 → analyzed by old web code, got empty labels — retry with new threshold
+ *   2 → analyzed by current iOS code (native Vision + canvas colors) — correct, skip
  *   3 → analyzed by old web code (background-aware but tight black threshold)
  *   4 → analyzed by current web code (raised black threshold) — correct, skip
- *   5 → analyzed by current web code, truly empty labels — don't retry
+ *   5 → analyzed by current code, truly empty labels — don't retry
  *
  * Eligible for (re-)indexing:
- *   • iOS  : visionVersion === 0 only (native Vision handles it; don't overwrite)
+ *   • iOS  : v0 (never analyzed) or v1 (old — missing color labels)
  *   • Web  : visionVersion 0–3 (anything produced by old code gets re-run)
  *            visionVersion 4 (current correct) and 5 (empty sentinel) are skipped.
  *
  * After analysis:
  *   • Got labels on web  → visionVersion = 4
- *   • Got labels on iOS  → visionVersion = 1
+ *   • Got labels on iOS  → visionVersion = 2  (native Vision + canvas colors)
  *   • Empty labels       → visionVersion = 5  (stop retrying)
  *
  * New items added mid-session can be queued via queueItemForIndexing(); they
@@ -63,8 +63,9 @@ function needsIndexing(item: { visionVersion?: number }): boolean {
   const v        = item.visionVersion ?? 0;
   const isNative = Capacitor.isNativePlatform();
   if (isNative) {
-    // iOS: only process items that have never been analyzed.
-    return v === 0;
+    // iOS: v0 = never analyzed; v1 = old (object labels only, no color labels).
+    // v2 = current iOS correct (object labels + canvas colors); skip v2+ and sentinel 5+.
+    return v === 0 || v === 1;
   }
   // Web: process anything analyzed by old code (0–3); skip current (4) and empty-sentinel (5+).
   return v <= 3;
@@ -88,7 +89,7 @@ export async function indexOne(id: string): Promise<boolean> {
       visionLabels:  result.labels,
       visionText:    result.texts,
       visionVersion: result.labels.length > 0
-        ? (isNative ? 1 : 4)  // 1 = iOS Vision, 4 = current web canvas
+        ? (isNative ? 2 : 4)  // 2 = iOS Vision + canvas colors, 4 = current web canvas
         : 5,                  // 5 = empty labels with current code, don't retry
     });
     return true;

@@ -26,7 +26,8 @@ export function isVisionAvailable(): boolean {
 
 /**
  * Analyze a data-URL image.
- * On iOS: uses Apple Vision (classification + OCR).
+ * On iOS: uses Apple Vision (classification + OCR) PLUS canvas color extraction,
+ *         so color searches ("black", "white", etc.) work alongside object labels.
  * On web:  uses canvas pixel sampling to extract dominant color names.
  * Always resolves — never rejects.
  */
@@ -37,14 +38,21 @@ export async function analyzeImage(
 
   if (isVisionAvailable()) {
     try {
-      return await VisionAnalyzer.analyze({ dataUrl, confidenceThreshold: 0.4 });
+      // Run native Vision (object labels + OCR) and canvas colors in parallel.
+      const [native, colorLabels] = await Promise.all([
+        VisionAnalyzer.analyze({ dataUrl, confidenceThreshold: 0.4 }),
+        extractColorsFromDataUrl(dataUrl),
+      ]);
+      // Merge: color labels first so color searches score higher, then object labels.
+      const merged = [...new Set([...colorLabels, ...native.labels])];
+      return { labels: merged, texts: native.texts };
     } catch (err) {
       console.warn('[VisionAnalyzer] Native analysis failed:', err);
-      return { labels: [], texts: [] };
+      // Fall through to canvas-only path.
     }
   }
 
-  // Web fallback: canvas color extraction.
+  // Web (or native fallback): canvas color extraction only.
   const labels = await extractColorsFromDataUrl(dataUrl);
   return { labels, texts: [] };
 }
