@@ -12,7 +12,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Heart, Trash2, Save, ChevronDown,
-  Loader2, Wand2, AlertCircle, Check, ChevronLeft, BookmarkPlus,
+  Loader2, Wand2, AlertCircle, Check, ChevronLeft,
 } from "lucide-react";
 import type { ClothingItem, ClothingItemUpdateCategory } from "@/types/local";
 import {
@@ -26,7 +26,6 @@ import {
   getListOutfitsQueryKey,
   useListOutfits,
   useAddItemToOutfit,
-  useRemoveItemFromOutfit,
 } from "@/hooks/useLocalOutfits";
 import { useQueryClient } from "@tanstack/react-query";
 import { getImageUrl } from "@/lib/utils";
@@ -324,11 +323,9 @@ function formatShortDate(iso: string): string {
 export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetProps) {
   const [form,             setForm]             = useState<FormState | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showGroupPicker, setShowGroupPicker] = useState(false);
 
   const { data: outfits = [] } = useListOutfits();
-  const addToOutfit    = useAddItemToOutfit();
-  const removeFromOutfit = useRemoveItemFromOutfit();
+  const addToOutfit = useAddItemToOutfit();
 
   // Displayed photo URL — updated optimistically before DB write completes.
   const [displayImageUrl, setDisplayImageUrl]  = useState<string | null>(null);
@@ -649,19 +646,6 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
             );
           })()}
 
-          {/* Add to Lookbook button */}
-          <div className="px-4 pb-3 bg-white border-t border-black/10">
-            <button
-              onClick={() => setShowGroupPicker(true)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-                         border-2 border-black font-bold text-xs uppercase tracking-wide bg-white
-                         shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
-                         active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
-            >
-              <BookmarkPlus className="w-3.5 h-3.5" />
-              Add to Lookbook
-            </button>
-          </div>
         </div>
 
         {/* Form */}
@@ -699,6 +683,39 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
                          bg-white focus:outline-none focus:ring-2 focus:ring-primary resize-none
                          placeholder:font-normal placeholder:text-black/25"
             />
+          </div>
+
+          {/* Add to Lookbook — inline dropdown */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-black/40">
+              Add to Lookbook
+            </label>
+            <div className="relative">
+              <select
+                value=""
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  addToOutfit.mutate({ id: e.target.value, data: { itemId: item.id } });
+                }}
+                className="w-full border-2 border-black rounded-lg px-3 py-2 text-sm font-medium
+                           bg-white focus:outline-none focus:ring-2 focus:ring-primary
+                           shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] appearance-none pr-8"
+              >
+                <option value="">Select a lookbook…</option>
+                {outfits.map((outfit) => {
+                  const alreadyIn = outfit.items?.some((i) => i.id === item.id) ?? false;
+                  return (
+                    <option key={outfit.id} value={outfit.id} disabled={alreadyIn}>
+                      {alreadyIn ? `✓ ${outfit.name}` : outfit.name}
+                    </option>
+                  );
+                })}
+                {outfits.length === 0 && (
+                  <option disabled value="">No lookbooks saved yet</option>
+                )}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-black/40" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <SelectField
