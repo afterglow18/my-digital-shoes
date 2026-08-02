@@ -225,64 +225,7 @@ export default function SavedPage() {
           transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
           className="flex flex-col gap-6"
         >
-          {/* Outfits section */}
-          {outfitResults.length > 0 && (
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3">
-                Lookbooks
-              </p>
-              <div className="flex flex-col gap-4">
-                {outfitResults.map(({ outfit }) => {
-                  const bySlot = (outfit.items ?? []).reduce<Partial<Record<SlotKey, ClothingItem>>>(
-                    (acc, item) => {
-                      const key = item.category as SlotKey;
-                      if (SLOT_ORDER.includes(key) && !acc[key]) acc[key] = item;
-                      return acc;
-                    },
-                    {},
-                  );
-                  return (
-                    <div
-                      key={outfit.id}
-                      className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-xl overflow-hidden"
-                    >
-                      <div className="px-4 py-3 border-b-2 border-black bg-primary">
-                        <h3 className="font-display font-bold text-lg uppercase tracking-tight truncate">
-                          {outfit.name}
-                        </h3>
-                        {outfit.notes && (
-                          <p className="text-xs text-black/50 mt-0.5 truncate">{outfit.notes}</p>
-                        )}
-                      </div>
-                      <div className="p-3 grid grid-cols-4 gap-2">
-                        {SLOT_ORDER.map((slot) => {
-                          const item = bySlot[slot];
-                          return (
-                            <div key={slot} className="flex flex-col gap-0.5">
-                              {item ? (
-                                <>
-                                  <ItemPhoto item={item} size="lg" onClick={() => setDetailsItem(item)} />
-                                  <span className="text-[8px] font-bold uppercase text-muted-foreground truncate text-center">
-                                    {SLOT_LABELS[slot]}
-                                  </span>
-                                </>
-                              ) : (
-                                <div className="h-28 w-full border-2 border-dashed border-black/15 rounded flex items-center justify-center">
-                                  <span className="text-[8px] font-bold uppercase text-black/20 text-center px-1">{SLOT_LABELS[slot]}</span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Individual items section */}
+          {/* ── Shoes first ───────────────────────────────────────────────── */}
           {itemResults.length > 0 && (
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3">
@@ -318,6 +261,49 @@ export default function SavedPage() {
                     </div>
                   </button>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Lookbooks second — compact rows, no full card grid ─────────── */}
+          {outfitResults.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3">
+                Lookbooks
+              </p>
+              <div className="flex flex-col gap-2">
+                {outfitResults.map(({ outfit }) => {
+                  const thumbs = (outfit.items ?? []).slice(0, 3);
+                  return (
+                    <div
+                      key={outfit.id}
+                      className="flex items-center gap-3 p-3 bg-white border-2 border-black rounded-xl
+                                 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                    >
+                      {/* Three small thumbnails */}
+                      <div className="flex gap-1 flex-shrink-0">
+                        {thumbs.map((i) => (
+                          <div key={i.id} className="w-9 h-9 border border-black/20 rounded overflow-hidden bg-white">
+                            {i.imageObjectPath && (
+                              <img src={getImageUrl(i.imageObjectPath)!} alt={i.name}
+                                   className="w-full h-full object-contain" />
+                            )}
+                          </div>
+                        ))}
+                        {/* Placeholder slots if fewer than 3 items */}
+                        {Array.from({ length: Math.max(0, 3 - thumbs.length) }).map((_, idx) => (
+                          <div key={idx} className="w-9 h-9 border border-black/10 rounded bg-black/5" />
+                        ))}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm uppercase tracking-tight truncate">{outfit.name}</p>
+                        <p className="text-[10px] text-black/40 font-medium">
+                          {outfit.items?.length ?? 0} shoe{(outfit.items?.length ?? 0) !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
