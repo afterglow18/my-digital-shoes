@@ -52,7 +52,7 @@ function AppShell() {
   const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
   const [entered, setEntered] = useState<boolean>(() => isPreview);
   const { enabled, isLocked, authenticate, enableLock, disableLock } = useBiometricLock();
-  const { isIndexing } = useVisionIndexer();
+  useVisionIndexer();
 
   // Recheck the RevenueCat entitlement every time the app returns to the
   // foreground. This removes premium access automatically if a subscription
@@ -83,35 +83,6 @@ function AppShell() {
         )}
       </AnimatePresence>
 
-      {/* Vision indexing toast — non-blocking, shown while background photo analysis runs */}
-      <AnimatePresence>
-        {isIndexing && (
-          <motion.div
-            key="vision-toast"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            style={{
-              position: 'fixed',
-              bottom: 'calc(env(safe-area-inset-bottom) + 72px)',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 500,
-              background: 'rgba(0,0,0,0.78)',
-              color: '#fff',
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: '0.05em',
-              padding: '6px 14px',
-              borderRadius: 20,
-              whiteSpace: 'nowrap',
-              pointerEvents: 'none',
-            }}
-          >
-            Preparing photo search…
-          </motion.div>
-        )}
-      </AnimatePresence>
     </BiometricLockContext.Provider>
   );
 }
