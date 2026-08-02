@@ -29,6 +29,7 @@
  * On analysis error the item keeps visionVersion === 0 for next-session retry.
  */
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Capacitor } from '@capacitor/core';
 import { dbGetClothing, dbListClothing, dbUpdateClothing } from '@/lib/db';
 import { analyzeImage } from '@/lib/visionAnalyzer';
@@ -101,6 +102,7 @@ export async function indexOne(id: string): Promise<boolean> {
 
 export function useVisionIndexer(): { isIndexing: boolean } {
   const [isIndexing, setIsIndexing] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (_loopStarted) return;
@@ -118,6 +120,8 @@ export function useVisionIndexer(): { isIndexing: boolean } {
         for (const item of pending) {
           if (!active) return;
           await indexOne(item.id);
+          // Invalidate so search results reflect the newly-added color labels.
+          queryClient.invalidateQueries({ queryKey: ['clothing'] });
           await new Promise<void>((r) => setTimeout(r, DELAY_MS));
         }
       }
@@ -130,6 +134,7 @@ export function useVisionIndexer(): { isIndexing: boolean } {
           if (!active) return;
           setIsIndexing(true);
           await indexOne(id);
+          queryClient.invalidateQueries({ queryKey: ['clothing'] });
           await new Promise<void>((r) => setTimeout(r, DELAY_MS));
         }
 
