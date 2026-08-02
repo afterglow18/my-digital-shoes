@@ -72,7 +72,8 @@ export default function SavedPage() {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [replacingSlot, setReplacingSlot] = useState<{ outfitId: string; category: SlotKey } | null>(null);
   const [addingExtra, setAddingExtra]     = useState<string | null>(null);
-  const [detailsItem, setDetailsItem] = useState<ClothingItem | null>(null);
+  const [detailsItem,       setDetailsItem]       = useState<ClothingItem | null>(null);
+  const [detailsFromSearch, setDetailsFromSearch] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -247,7 +248,7 @@ export default function SavedPage() {
                 {itemResults.map(({ item }) => (
                   <button
                     key={item.id}
-                    onClick={() => setDetailsItem(item)}
+                    onClick={() => { setDetailsItem(item); setDetailsFromSearch(true); }}
                     className="flex items-center gap-3 p-3 bg-white border-2 border-black rounded-xl
                                shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
                                active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all text-left"
@@ -609,7 +610,8 @@ export default function SavedPage() {
           <ItemDetailsSheet
             key={detailsItem.id}
             item={detailsItem}
-            onClose={() => setDetailsItem(null)}
+            showAddToLookbook={detailsFromSearch}
+            onClose={() => { setDetailsItem(null); setDetailsFromSearch(false); }}
           />
         )}
       </AnimatePresence>
