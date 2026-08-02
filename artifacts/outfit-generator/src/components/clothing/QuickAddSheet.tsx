@@ -14,6 +14,8 @@ import { useCreateClothingItem, getListClothingQueryKey } from "@/hooks/useLocal
 import type { ClothingItem } from "@/types/local";
 import { useQueryClient } from "@tanstack/react-query";
 import { removeBackground, blobToDataUrl, dataUrlToBlob } from "@/lib/backgroundRemoval";
+import { analyzeImage } from "@/lib/visionAnalyzer";
+import { dbUpdateClothing } from "@/lib/db";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -246,6 +248,11 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
             onSuccess: (createdItem) => {
               queryClient.invalidateQueries({ queryKey: getListClothingQueryKey() });
               if (onCreated) onCreated(createdItem);
+              analyzeImage(finalDataUrl).then((r) =>
+                dbUpdateClothing(createdItem.id, {
+                  visionLabels: r.labels, visionText: r.texts, visionVersion: 1,
+                }),
+              ).catch(() => {/* ignore */});
               resolve();
             },
             onError: reject,

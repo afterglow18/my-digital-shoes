@@ -48,7 +48,7 @@ let _dbPromise: Promise<IDBPDatabase<VanitySchema>> | null = null;
 
 function getDB(): Promise<IDBPDatabase<VanitySchema>> {
   if (!_dbPromise) {
-    _dbPromise = openDB<VanitySchema>('vanity-db', 1, {
+    _dbPromise = openDB<VanitySchema>('vanity-db', 2, {
       upgrade(db) {
         if (!db.objectStoreNames.contains('clothing')) {
           const s = db.createObjectStore('clothing', { keyPath: 'id' });
@@ -99,6 +99,9 @@ export async function dbCreateClothing(data: CreateClothingData): Promise<Clothi
     notes: data.notes ?? null,
     isFavorite: data.isFavorite ?? false,
     photoCleaned: false,
+    visionLabels: [],
+    visionText: [],
+    visionVersion: 0,
     timesWorn: 0,
     lastWornDate: null,
     previousLastWornDate: null,

@@ -26,6 +26,8 @@ import { getListOutfitsQueryKey } from "@/hooks/useLocalOutfits";
 import { useQueryClient } from "@tanstack/react-query";
 import { getImageUrl } from "@/lib/utils";
 import { removeBackground } from "@/lib/backgroundRemoval";
+import { analyzeImage } from "@/lib/visionAnalyzer";
+import { dbUpdateClothing } from "@/lib/db";
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -471,7 +473,17 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
     if (chosen === "cleaned") {
       updateItem.mutate(
         { id: item.id, data: { imageObjectPath: chosenUrl, photoCleaned: true } },
-        { onSuccess: invalidate },
+        {
+          onSuccess: () => {
+            invalidate();
+            // Re-analyze the new photo in background.
+            analyzeImage(chosenUrl).then((r) =>
+              dbUpdateClothing(item.id, {
+                visionLabels: r.labels, visionText: r.texts, visionVersion: 1,
+              }),
+            ).catch(() => {/* ignore */});
+          },
+        },
       );
     }
     // If "original" was chosen nothing changed — nothing to write.

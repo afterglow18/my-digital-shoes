@@ -8,7 +8,7 @@ import {
   getListOutfitsQueryKey,
 } from "@/hooks/useLocalOutfits";
 import type { ClothingItem } from "@/types/local";
-import { Trash2, Bookmark, Plus, Pencil, Check, X } from "lucide-react";
+import { Trash2, Bookmark, Plus, Pencil, Check, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getImageUrl } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,6 +17,8 @@ import { UpgradeSheet } from "@/components/paywall/UpgradeSheet";
 import { FREE_OUTFIT_LIMIT } from "@/types/local";
 import { WardrobePickerSheet } from "@/components/clothing/WardrobePickerSheet";
 import { ItemDetailsSheet } from "@/components/clothing/ItemDetailsSheet";
+import { useListClothing } from "@/hooks/useLocalWardrobe";
+import { searchItems, searchOutfits } from "@/lib/search";
 
 const SLOT_ORDER = ["heels", "sneakers", "boots", "sandals-flats"] as const;
 type SlotKey = (typeof SLOT_ORDER)[number];
@@ -77,6 +79,14 @@ export default function SavedPage() {
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesValue, setNotesValue] = useState("");
   const notesInputRef = useRef<HTMLTextAreaElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // All items — needed for search (items can match independently of an outfit).
+  const { data: allItems = [] } = useListClothing();
+
+  const isSearching = searchQuery.trim().length > 0;
+  const itemResults  = isSearching ? searchItems(allItems, searchQuery)  : [];
+  const outfitResults = isSearching ? searchOutfits(outfits ?? [], searchQuery, allItems) : [];
 
   useEffect(() => {
     if (renamingId !== null) renameInputRef.current?.focus();
@@ -177,6 +187,29 @@ export default function SavedPage() {
             </button>
           )}
         </div>
+
+        {/* Search bar */}
+        <div className="relative mt-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search Everything…"
+            className="w-full pl-10 pr-9 py-2.5 rounded-xl border-2 border-black bg-white
+                       text-sm font-medium placeholder:text-black/30
+                       focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full
+                         bg-black/10 flex items-center justify-center"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </header>
 
       {atLimit && !isLoading && (
@@ -204,7 +237,119 @@ export default function SavedPage() {
         </motion.div>
       )}
 
-      {isLoading ? (
+      {/* ── Search results ──────────────────────────────────────────────────── */}
+      {isSearching && (
+        <div className="flex flex-col gap-6">
+          {/* Outfits section */}
+          {outfitResults.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3">
+                Lookbooks
+              </p>
+              <div className="flex flex-col gap-4">
+                {outfitResults.map(({ outfit }) => {
+                  const bySlot = (outfit.items ?? []).reduce<Partial<Record<SlotKey, ClothingItem>>>(
+                    (acc, item) => {
+                      const key = item.category as SlotKey;
+                      if (SLOT_ORDER.includes(key) && !acc[key]) acc[key] = item;
+                      return acc;
+                    },
+                    {},
+                  );
+                  return (
+                    <div
+                      key={outfit.id}
+                      className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-xl overflow-hidden"
+                    >
+                      <div className="px-4 py-3 border-b-2 border-black bg-primary">
+                        <h3 className="font-display font-bold text-lg uppercase tracking-tight truncate">
+                          {outfit.name}
+                        </h3>
+                        {outfit.notes && (
+                          <p className="text-xs text-black/50 mt-0.5 truncate">{outfit.notes}</p>
+                        )}
+                      </div>
+                      <div className="p-3 grid grid-cols-4 gap-2">
+                        {SLOT_ORDER.map((slot) => {
+                          const item = bySlot[slot];
+                          return (
+                            <div key={slot} className="flex flex-col gap-0.5">
+                              {item ? (
+                                <>
+                                  <ItemPhoto item={item} size="lg" onClick={() => setDetailsItem(item)} />
+                                  <span className="text-[8px] font-bold uppercase text-muted-foreground truncate text-center">
+                                    {SLOT_LABELS[slot]}
+                                  </span>
+                                </>
+                              ) : (
+                                <div className="h-28 w-full border-2 border-dashed border-black/15 rounded flex items-center justify-center">
+                                  <span className="text-[8px] font-bold uppercase text-black/20 text-center px-1">{SLOT_LABELS[slot]}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Individual items section */}
+          {itemResults.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3">
+                Shoes
+              </p>
+              <div className="flex flex-col gap-2">
+                {itemResults.map(({ item }) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setDetailsItem(item)}
+                    className="flex items-center gap-3 p-3 bg-white border-2 border-black rounded-xl
+                               shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+                               active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all text-left"
+                  >
+                    <div className="w-11 h-11 border-2 border-black rounded overflow-hidden flex-shrink-0 bg-white">
+                      {item.imageObjectPath ? (
+                        <img
+                          src={getImageUrl(item.imageObjectPath)!}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-black/5 flex items-center justify-center">
+                          <span className="text-[8px] text-black/30">—</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate">{item.name}</p>
+                      <p className="text-[10px] font-bold uppercase text-black/40 tracking-wide">
+                        {SLOT_LABELS[item.category as SlotKey] ?? item.category}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No results */}
+          {outfitResults.length === 0 && itemResults.length === 0 && (
+            <div className="flex flex-col items-center justify-center text-center py-16 gap-3">
+              <Search className="w-8 h-8 text-black/20" />
+              <p className="font-display font-bold text-xl">No results</p>
+              <p className="text-sm text-muted-foreground">Try a different word or check the spelling.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Normal outfit list (hidden while searching) ──────────────────────── */}
+      {!isSearching && (isLoading ? (
         <div className="flex flex-col gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-52 bg-muted animate-pulse border-2 border-black rounded-xl" />
@@ -408,7 +553,7 @@ export default function SavedPage() {
             Head to your Shoes, spin the slots, and save looks you love.
           </p>
         </div>
-      )}
+      ))}
 
       {/* Upgrade sheet */}
       <AnimatePresence>

@@ -31,6 +31,12 @@ export interface ClothingItem {
   previousLastWornDate: string | null;
   /** True once the user has confirmed a background-removal result for this item. */
   photoCleaned: boolean;
+  /** Apple Vision classification labels (lowercase, deduplicated). Empty until analyzed. */
+  visionLabels?: string[];
+  /** Apple Vision OCR text found in the photo (lowercase, deduplicated). Empty until analyzed. */
+  visionText?: string[];
+  /** 0 = not yet analyzed; 1 = analyzed with current model. */
+  visionVersion?: number;
   createdAt: string;
   updatedAt: string;
 }
