@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { removeBackground, blobToDataUrl, dataUrlToBlob } from "@/lib/backgroundRemoval";
 import { analyzeImage } from "@/lib/visionAnalyzer";
 import { dbUpdateClothing } from "@/lib/db";
+import { Capacitor } from "@capacitor/core";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -250,7 +251,9 @@ export function QuickAddSheet({ open, onOpenChange, category, existingCount, onC
               if (onCreated) onCreated(createdItem);
               analyzeImage(finalDataUrl).then((r) =>
                 dbUpdateClothing(createdItem.id, {
-                  visionLabels: r.labels, visionText: r.texts, visionVersion: 1,
+                  visionLabels: r.labels,
+                  visionText: r.texts,
+                  visionVersion: r.labels.length > 0 ? (Capacitor.isNativePlatform() ? 1 : 3) : 2,
                 }),
               ).catch(() => {/* ignore */});
               resolve();

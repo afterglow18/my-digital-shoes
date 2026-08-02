@@ -28,6 +28,7 @@ import { getImageUrl } from "@/lib/utils";
 import { removeBackground } from "@/lib/backgroundRemoval";
 import { analyzeImage } from "@/lib/visionAnalyzer";
 import { dbUpdateClothing } from "@/lib/db";
+import { Capacitor } from "@capacitor/core";
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -479,7 +480,9 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
             // Re-analyze the new photo in background.
             analyzeImage(chosenUrl).then((r) =>
               dbUpdateClothing(item.id, {
-                visionLabels: r.labels, visionText: r.texts, visionVersion: 1,
+                visionLabels: r.labels,
+                visionText: r.texts,
+                visionVersion: r.labels.length > 0 ? (Capacitor.isNativePlatform() ? 1 : 3) : 2,
               }),
             ).catch(() => {/* ignore */});
           },

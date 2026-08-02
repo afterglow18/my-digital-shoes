@@ -52,8 +52,13 @@ export async function analyzeImage(
 // ── Canvas color extraction ────────────────────────────────────────────────────
 
 /**
- * Draws the image on a small canvas, samples every pixel, and returns the
- * dominant color names (those covering ≥ 15 % of non-transparent pixels).
+ * Draws the image on a 48×48 canvas, detects the background color from the
+ * four corner patches, then tallies only non-background / non-transparent
+ * pixels so photographic backgrounds don't swamp the shoe's true color.
+ *
+ * Falls back to a full-image pass (no background exclusion) if background
+ * exclusion removes everything — handles edge cases like a white shoe on a
+ * white wall where the shoe and background share the same hue.
  */
 function extractColorsFromDataUrl(dataUrl: string): Promise<string[]> {
   return new Promise((resolve) => {
@@ -61,7 +66,7 @@ function extractColorsFromDataUrl(dataUrl: string): Promise<string[]> {
       const img = new Image();
       img.onload = () => {
         try {
-          const SIZE = 32; // 32×32 is plenty for color profiling
+          const SIZE = 48;
           const canvas = document.createElement('canvas');
           canvas.width  = SIZE;
           canvas.height = SIZE;
@@ -70,19 +75,50 @@ function extractColorsFromDataUrl(dataUrl: string): Promise<string[]> {
           ctx.drawImage(img, 0, 0, SIZE, SIZE);
           const { data } = ctx.getImageData(0, 0, SIZE, SIZE);
 
-          const counts: Record<string, number> = {};
-          let total = 0;
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-            if (a < 64) continue; // ignore mostly-transparent pixels
-            const name = rgbToColorName(r, g, b);
-            counts[name] = (counts[name] ?? 0) + 1;
-            total++;
+          // ── Step 1: estimate background color from corner 4×4 patches ──────
+          const PATCH = 4;
+          let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
+          for (const [cx, cy] of [
+            [0, 0], [SIZE - PATCH, 0],
+            [0, SIZE - PATCH], [SIZE - PATCH, SIZE - PATCH],
+          ] as [number, number][]) {
+            for (let dy = 0; dy < PATCH; dy++) {
+              for (let dx = 0; dx < PATCH; dx++) {
+                const i = ((cy + dy) * SIZE + (cx + dx)) * 4;
+                if (data[i + 3] < 64) continue; // transparent → skip
+                bgR += data[i]; bgG += data[i + 1]; bgB += data[i + 2];
+                bgCount++;
+              }
+            }
           }
+          const hasBg = bgCount > 0;
+          if (hasBg) { bgR /= bgCount; bgG /= bgCount; bgB /= bgCount; }
 
+          // ── Step 2: tally foreground pixel colors ────────────────────────
+          const tally = (excludeBg: boolean) => {
+            const counts: Record<string, number> = {};
+            let total = 0;
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+              if (a < 64) continue; // transparent → background removed
+              if (excludeBg && hasBg) {
+                // Manhattan distance per channel; ≤ 22 avg → likely background
+                if (Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB) < 66) continue;
+              }
+              const name = rgbToColorName(r, g, b);
+              counts[name] = (counts[name] ?? 0) + 1;
+              total++;
+            }
+            return { counts, total };
+          };
+
+          let { counts, total } = tally(true);
+
+          // If background exclusion removed everything, retry without it.
+          if (total === 0) ({ counts, total } = tally(false));
           if (total === 0) { resolve([]); return; }
 
-          const threshold = total * 0.12; // must cover ≥ 12 % of pixels
+          const threshold = total * 0.10; // color must cover ≥ 10 % of foreground
           const colors = Object.entries(counts)
             .filter(([, c]) => c >= threshold)
             .sort(([, a], [, b]) => b - a)

@@ -4,16 +4,27 @@
  *
  * Runs at most once per JS session (module-level guard).
  *
- * Items eligible for (re-)indexing:
- *   • visionVersion === 0  → never analyzed.
- *   • visionVersion === 1 AND visionLabels is empty → analyzed before the
- *     web color-extraction fallback existed; needs a fresh pass.
+ * Version scheme
+ * ──────────────
+ *   0 → never analyzed
+ *   1 → analyzed by native iOS Vision (correct — skip on all platforms)
+ *       OR analyzed by old web code without background exclusion (wrong labels)
+ *   2 → analyzed and got empty labels — don't retry
+ *   3 → analyzed by new background-aware web canvas (correct — skip on web)
  *
- * After a successful analysis that yields labels, visionVersion is set to 1.
- * After a successful analysis that still yields no labels (e.g. blank image),
- * visionVersion is set to 2 so the item is not retried endlessly.
+ * Eligible for (re-)indexing:
+ *   • iOS  : visionVersion === 0 only (native Vision handles it; don't overwrite)
+ *   • Web  : visionVersion === 0 or visionVersion === 1
+ *            (catches items labeled by the old broken code as well as unlabeled ones)
+ *            visionVersion 2 (empty-label sentinel) and 3 (correct web) are skipped.
+ *
+ * After analysis:
+ *   • Got labels on web  → visionVersion = 3
+ *   • Got labels on iOS  → visionVersion = 1
+ *   • Empty labels       → visionVersion = 2  (stop retrying)
  */
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { dbListClothing, dbUpdateClothing } from '@/lib/db';
 import { analyzeImage } from '@/lib/visionAnalyzer';
 
@@ -30,18 +41,21 @@ export function useVisionIndexer(): { isIndexing: boolean } {
     if (_indexingStarted) return;
     _indexingStarted = true;
 
+    const isNative = Capacitor.isNativePlatform();
     let active = true;
 
     async function run() {
       const items = await dbListClothing();
       const pending = items.filter((i) => {
         if (!i.imageObjectPath) return false;
-        const v      = i.visionVersion ?? 0;
-        const noLabels = (i.visionLabels?.length ?? 0) === 0;
-        // v === 0 → never analyzed.
-        // v === 1 + empty labels → old web-only pass; needs color extraction.
-        // v >= 2 → either has labels or was already retried → skip.
-        return v === 0 || (v === 1 && noLabels);
+        const v = i.visionVersion ?? 0;
+        if (isNative) {
+          // On iOS: only process items that have never been analyzed.
+          return v === 0;
+        }
+        // On web: process unanalyzed (0) and old-code items (1).
+        // Skip empty-label sentinel (2) and correct web labels (3+).
+        return v === 0 || v === 1;
       });
 
       if (pending.length === 0) return;
@@ -55,8 +69,9 @@ export function useVisionIndexer(): { isIndexing: boolean } {
           await dbUpdateClothing(item.id, {
             visionLabels:  result.labels,
             visionText:    result.texts,
-            // v=1 if we got labels; v=2 if still empty (stops future retries).
-            visionVersion: result.labels.length > 0 ? 1 : 2,
+            visionVersion: result.labels.length > 0
+              ? (isNative ? 1 : 3)  // 1 = iOS Vision, 3 = background-aware web canvas
+              : 2,                  // 2 = empty labels, don't retry
           });
         } catch {
           // One failure must not stop the whole queue.
