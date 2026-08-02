@@ -12,7 +12,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Heart, Trash2, Save, ChevronDown,
-  Loader2, Wand2, AlertCircle, Check, ChevronLeft,
+  Loader2, Wand2, AlertCircle, Check, ChevronLeft, BookmarkPlus,
 } from "lucide-react";
 import type { ClothingItem, ClothingItemUpdateCategory } from "@/types/local";
 import {
@@ -22,7 +22,12 @@ import {
   getListClothingQueryKey,
   getClothingItemQueryKey,
 } from "@/hooks/useLocalWardrobe";
-import { getListOutfitsQueryKey } from "@/hooks/useLocalOutfits";
+import {
+  getListOutfitsQueryKey,
+  useListOutfits,
+  useAddItemToOutfit,
+  useRemoveItemFromOutfit,
+} from "@/hooks/useLocalOutfits";
 import { useQueryClient } from "@tanstack/react-query";
 import { getImageUrl } from "@/lib/utils";
 import { removeBackground } from "@/lib/backgroundRemoval";
@@ -319,6 +324,11 @@ function formatShortDate(iso: string): string {
 export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetProps) {
   const [form,             setForm]             = useState<FormState | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
+
+  const { data: outfits = [] } = useListOutfits();
+  const addToOutfit    = useAddItemToOutfit();
+  const removeFromOutfit = useRemoveItemFromOutfit();
 
   // Displayed photo URL — updated optimistically before DB write completes.
   const [displayImageUrl, setDisplayImageUrl]  = useState<string | null>(null);
@@ -638,6 +648,20 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
               </div>
             );
           })()}
+
+          {/* Add to Lookbook button */}
+          <div className="px-4 pb-3 bg-white border-t border-black/10">
+            <button
+              onClick={() => setShowGroupPicker(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
+                         border-2 border-black font-bold text-xs uppercase tracking-wide bg-white
+                         shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+                         active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+            >
+              <BookmarkPlus className="w-3.5 h-3.5" />
+              Add to Lookbook
+            </button>
+          </div>
         </div>
 
         {/* Form */}
@@ -778,6 +802,113 @@ export function ItemDetailsSheet({ item, onClose, onDeleted }: ItemDetailsSheetP
               setCleanedUrl(null);
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Group picker — slides up, lists all lookbooks */}
+      <AnimatePresence>
+        {showGroupPicker && (
+          <motion.div
+            className="fixed inset-0 z-[75] flex flex-col max-w-md mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {/* Scrim */}
+            <div
+              className="flex-1 bg-black/40"
+              onClick={() => setShowGroupPicker(false)}
+            />
+
+            {/* Sheet */}
+            <motion.div
+              className="bg-white rounded-t-2xl border-t-2 border-x-2 border-black
+                         flex flex-col overflow-hidden"
+              style={{ maxHeight: "72vh", paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 240 }}
+            >
+              {/* Sheet header */}
+              <div className="flex items-center justify-between px-4 py-4 border-b-2 border-black flex-shrink-0">
+                <h3 className="font-display font-bold text-lg uppercase tracking-tight">
+                  Add to Lookbook
+                </h3>
+                <button
+                  onClick={() => setShowGroupPicker(false)}
+                  className="w-8 h-8 flex items-center justify-center border-2 border-black
+                             rounded-full bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                             active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Outfit list */}
+              <div className="overflow-y-auto flex-1 p-4 flex flex-col gap-2">
+                {outfits.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="font-bold text-sm text-black/50">No lookbooks yet.</p>
+                    <p className="text-xs text-black/30 mt-1">
+                      Save a look from the Generate tab first.
+                    </p>
+                  </div>
+                ) : (
+                  outfits.map((outfit) => {
+                    const alreadyIn = outfit.items?.some((i) => i.id === item.id) ?? false;
+                    const thumbs    = (outfit.items ?? []).slice(0, 3);
+                    return (
+                      <button
+                        key={outfit.id}
+                        onClick={() => {
+                          if (alreadyIn) {
+                            removeFromOutfit.mutate({ id: outfit.id, itemId: item.id });
+                          } else {
+                            addToOutfit.mutate({ id: outfit.id, data: { itemId: item.id } });
+                          }
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left
+                                    transition-all active:translate-x-0.5 active:translate-y-0.5
+                                    ${alreadyIn
+                                      ? "border-black bg-primary shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none"
+                                      : "border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none"
+                                    }`}
+                      >
+                        {/* Thumbnails */}
+                        <div className="flex gap-1 flex-shrink-0">
+                          {thumbs.map((i) => (
+                            <div key={i.id} className="w-9 h-9 border border-black/20 rounded overflow-hidden bg-white">
+                              {i.imageObjectPath && (
+                                <img src={getImageUrl(i.imageObjectPath)!} alt={i.name}
+                                     className="w-full h-full object-contain" />
+                              )}
+                            </div>
+                          ))}
+                          {Array.from({ length: Math.max(0, 3 - thumbs.length) }).map((_, idx) => (
+                            <div key={idx} className="w-9 h-9 border border-black/10 rounded bg-black/5" />
+                          ))}
+                        </div>
+
+                        {/* Name */}
+                        <p className="flex-1 font-bold text-sm uppercase tracking-tight truncate">
+                          {outfit.name}
+                        </p>
+
+                        {/* Check / add indicator */}
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0
+                                        border-2 border-black transition-colors
+                                        ${alreadyIn ? "bg-black" : "bg-white"}`}>
+                          <Check className={`w-3 h-3 ${alreadyIn ? "text-white" : "text-transparent"}`} />
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
